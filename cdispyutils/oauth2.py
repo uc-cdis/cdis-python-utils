@@ -62,7 +62,7 @@ class OAuth2Client(object):
             return r.json()
         except Exception as e:
             logger.exception("Fail to reach oauth provider")
-            return {'error': e.message}
+            return {'error': "Fail to reach oauth provider: " + str(e.message)}
 
     def refresh_token(self, refresh_token):
         '''
@@ -80,4 +80,4 @@ class OAuth2Client(object):
             return r.json()
         except Exception as e:
             logger.exception("Fail to reach oauth provider")
-            return {'error': e.message}
+            return {'error': "Fail to reach oauth provider: " + str(e.message)}
