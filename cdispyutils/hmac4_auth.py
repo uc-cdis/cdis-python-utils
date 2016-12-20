@@ -46,6 +46,7 @@ class HMAC4Auth(object):
     def generate_signature(self, secret_key, sig_string):
         hsh = hmac.new(secret_key, sig_string, hashlib.sha256)
         sig = hsh.hexdigest()
+        return sig
 
     @staticmethod
     def parse_access_key_and_signature(req):
