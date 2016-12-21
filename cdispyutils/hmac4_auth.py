@@ -24,8 +24,7 @@ class HMAC4Auth(object):
         self.service = service
 
     def get_sign_string_from_req(self, req, except_headers=None):
-        req_date = self.get_request_date(req)
-        scope = self.get_request_scope(req_date, self.service)
+        scope = self.get_request_scope(req, self.service)
 
         # encode body and generate body hash
         if hasattr(req, 'body') and req.body is not None:
@@ -33,15 +32,28 @@ class HMAC4Auth(object):
             content_hash = hashlib.sha256(req.body)
         else:
             content_hash = hashlib.sha256(b'')
-        req.headers[constants.ENCODED_REQUEST_CONTENT] = content_hash.hexdigest()
+        req.headers[constants.HASHED_REQUEST_CONTENT] = content_hash.hexdigest()
 
         # generate signature
-        result = self.get_canonical_headers(req)
-        cano_headers, signed_headers = result
+        cano_headers, signed_headers = self.get_canonical_headers(req)
         cano_req = self.get_canonical_request(req, cano_headers,
                                               signed_headers)
         sig_string = self.get_sig_string(req, cano_req, scope)
         return sig_string.encode('utf-8')
+
+    def sign_request(self, req, access_key, secret_key):
+        sig_string = self.get_sign_string_from_req(req)
+        scope = self.get_request_scope(req, self.service)
+        signature = self.generate_signature(secret_key, sig_string)
+        cano_headers, signed_headers = self.get_canonical_headers(req)
+        req.headers['Authorization'] = self.create_authentication_headers(access_key, scope, signed_headers, signature)
+
+    def create_authentication_headers(self, access_key, scope, signed_headers, signature):
+        auth_str = 'HMAC-SHA256 '
+        auth_str += 'Credential={}/{}, '.format(access_key, scope)
+        auth_str += 'SignedHeaders={}, '.format(signed_headers)
+        auth_str += 'Signature={}'.format(signature)
+        return auth_str
 
     def generate_signature(self, secret_key, sig_string):
         hsh = hmac.new(secret_key, sig_string, hashlib.sha256)
@@ -55,7 +67,8 @@ class HMAC4Auth(object):
         return vals[1], vals[2]
 
     @classmethod
-    def get_request_scope(cls, date, service):
+    def get_request_scope(cls, req, service):
+        date = cls.get_request_date(req)
         return '{}/{}/{}'.format(date, service, constants.BIONIMBUS_REQUEST)
 
     @staticmethod
@@ -194,7 +207,7 @@ class HMAC4Auth(object):
         split = req.url.split('?', 1)
         qs = split[1] if len(split) == 2 else ''
         qs = self.format_cano_querystring(qs)
-        payload_hash = req.headers[constants.ENCODED_REQUEST_CONTENT]
+        payload_hash = req.headers[constants.HASHED_REQUEST_CONTENT]
         req_parts = [req.method.upper(), path, qs, cano_headers,
                      signed_headers, payload_hash]
         cano_req = '\n'.join(req_parts)
