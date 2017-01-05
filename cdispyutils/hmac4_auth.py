@@ -1,3 +1,12 @@
+"""
+Provides HMAC4Auth class for signing request.
+This class inspired by AWS4SigningKey from requests_aws4auth
+
+"""
+
+# Licensed under the MIT License:
+# http://opensource.org/licenses/MIT
+
 import hmac
 import hashlib
 import datetime
