@@ -17,6 +17,11 @@ except ImportError:
 
 class DateFormatError(Exception): pass
 
+class UnauthorizedError(Exception):
+    def __init__(self, message='', json=None):
+        self.message = message
+        self.json = json
+
 class HMAC4Auth(object):
     default_include_headers = ['host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
@@ -46,7 +51,8 @@ class HMAC4Auth(object):
         scope = self.get_request_scope(req, self.service)
         signature = self.generate_signature(secret_key, sig_string)
         cano_headers, signed_headers = self.get_canonical_headers(req)
-        req.headers['Authorization'] = self.create_authentication_headers(access_key, scope, signed_headers, signature)
+        req.headers[constants.AUTHORIZATION_HEADER] = self.create_authentication_headers(access_key, scope,
+                                                                                         signed_headers, signature)
 
     def create_authentication_headers(self, access_key, scope, signed_headers, signature):
         auth_str = 'HMAC-SHA256 '
@@ -63,8 +69,8 @@ class HMAC4Auth(object):
     @staticmethod
     def parse_access_key_and_signature(req):
         authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
-        vals = re.split(': ', authorization_header)
-        return vals[1], vals[2]
+        vals = re.split('= /', authorization_header)
+        return vals[2], vals[7]
 
     @classmethod
     def get_request_scope(cls, req, service):
@@ -367,3 +373,16 @@ class HMAC4Auth(object):
         sig_items = [constants.ALGORITHM, req_date, scope, hsh.hexdigest()]
         sig_string = '\n'.join(sig_items)
         return sig_string
+
+
+    def verify(service, req, secret_key):
+        hmac4_auth = HMAC4Auth(service)
+        access_key, signature = hmac4_auth.parse_access_key_and_signature(req)
+        # secret_key = get_secret_key(access_key).secret_key
+        sig_string = hmac4_auth.get_sign_string_from_req(req)
+        regenerate_signature = hmac4_auth.generate_signature(secret_key, sig_string)
+        if signature != regenerate_signature:
+            raise UnauthorizedError("Invalid authenticated request")
+
+    def parse_service(req):
+        return "" # TODO: list all provided service from API
