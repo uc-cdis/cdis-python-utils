@@ -24,7 +24,6 @@ except ImportError:
     from urlparse import urlparse, parse_qs
     from urllib import quote, unquote
 
-
 class DateFormatError(Exception): pass
 
 class Utils_Error(Exception):
@@ -44,6 +43,23 @@ class ExpiredTimeError(Utils_Error):
         self.code = 500
         super(ExpiredTimeError, self).__init__(message, json)
 
+
+"""
+Authentication utils class providing functions that generate and check
+HMACv4 for HTTP requests. Implements header-based authentication only
+
+You can reuse HMAC4Auth instances to sign as many requests as you need.
+
+Basic usage
+-----------
+>>> from flask import request
+>>> from cdispyutils.hmac4.hmac4_auth_utils import verify, parse_access_key_and_signature
+>>> req = request
+>>> service = parse_service(req)
+>>> access_key, signature = parse_access_key_and_signature(req)
+>>> secret_key = get_secret_key(access_key)
+>>> verify(service, req, secret_key)
+"""
 
 default_include_headers = ['host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
@@ -393,7 +409,7 @@ def verify(service, req, secret_key):
     access_key, signature = parse_access_key_and_signature(req)
     req_date = get_request_date(req)
     if not check_expired_time(req_date):
-        raise ExpiredTimeError("Request take so long time")
+        raise ExpiredTimeError("Request took so long time")
     # secret_key = get_secret_key(access_key).secret_key
     sig_string = get_sign_string_from_req(req, service)
     signing_key = HMAC4SigningKey(secret_key, service, req_date)

@@ -21,7 +21,7 @@ class HMAC4Auth(AuthBase):
     >>> response.text
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, access_key, signing_key, raise_invalid_date=False):
         """
         HMAC4Auth instances can be created by supplying key scope parameters
         directly or by using an AWS4SigningKey instance:
@@ -49,29 +49,18 @@ class HMAC4Auth(AuthBase):
 
                        See the AWS4Auth class docstring for supported date
                        formats.
-        session_token
-                    -- Must be supplied as keyword argument. If session_token
-                       is set, then it is used for the x-amz-security-token
-                       header, for use with STS temporary credentials.
-
         """
-        l = len(args)
-        self.access_key = args[0]
-        if isinstance(args[1], HMAC4SigningKey) and l == 2:
-            # instantiate from signing key
-            self.signing_key = args[1]
-            self.service = self.signing_key.service
-            self.date = self.signing_key.date
+        self.access_key = access_key
+        self.signing_key = signing_key
+        self.service = self.signing_key.service
+        self.date = self.signing_key.date
 
-        raise_invalid_date = kwargs.get('raise_invalid_date', False)
         if raise_invalid_date in [True, False]:
             self.raise_invalid_date = raise_invalid_date
         else:
             raise ValueError('raise_invalid_date must be True or False in AWS4Auth.__init__()')
 
-        # self.include_hdrs = kwargs.get('include_hdrs',
-        #                                self.default_include_headers)
-        AuthBase.__init__(self)
+        super(HMAC4Auth, self).__init__()
 
     def __call__(self, req):
         req = sign_request(req, self.access_key, self.signing_key, self.service)
