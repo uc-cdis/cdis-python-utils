@@ -74,7 +74,7 @@ def sign_request(req, access_key, signing_key, service):
                                                                                      signed_headers, signature)
     return req
 
-def create_authentication_headers(cls, access_key, scope, signed_headers, signature):
+def create_authentication_headers(access_key, scope, signed_headers, signature):
     auth_str = 'HMAC-SHA256 '
     auth_str += 'Credential={}/{}, '.format(access_key, scope)
     auth_str += 'SignedHeaders={}, '.format(signed_headers)

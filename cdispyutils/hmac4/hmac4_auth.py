@@ -60,7 +60,6 @@ class HMAC4Auth(AuthBase):
         if isinstance(args[1], HMAC4SigningKey) and l == 2:
             # instantiate from signing key
             self.signing_key = args[1]
-            self.region = self.signing_key.region
             self.service = self.signing_key.service
             self.date = self.signing_key.date
 
