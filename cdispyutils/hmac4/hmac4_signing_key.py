@@ -40,7 +40,7 @@ class HMAC4SigningKey:
 
     """
 
-    def __init__(self, secret_key, region, service, date=None,
+    def __init__(self, secret_key, service, date=None,
                  store_secret_key=True):
         """
         >>> HMAC4SigningKey(secret_key, region, service[, date]
@@ -78,16 +78,15 @@ class HMAC4SigningKey:
 
         """
 
-        self.region = region
         self.service = service
         self.date = date or datetime.utcnow().strftime('%Y%m%d')
         self.store_secret_key = store_secret_key
         self.secret_key = secret_key if self.store_secret_key else None
-        self.key = self.generate_key(secret_key, self.region,
+        self.key = self.generate_key(secret_key,
                                      self.service, self.date)
 
     @classmethod
-    def generate_key(cls, secret_key, region, service, date,
+    def generate_key(cls, secret_key, service, date,
                      intermediates=False):
         """
         Generate the signing key string as bytes.

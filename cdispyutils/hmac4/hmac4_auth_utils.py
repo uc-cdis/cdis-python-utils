@@ -13,8 +13,9 @@ import datetime
 import re
 import shlex
 import posixpath
-import constants
+import cdispyutils.constants as constants
 
+from hmac4_signing_key import HMAC4SigningKey
 from six import PY2, text_type
 
 try:
@@ -31,46 +32,51 @@ class UnauthorizedError(Exception):
         self.message = message
         self.json = json
 
-class HMAC4Auth(object):
+class HMAC4Auth_Utils(object):
     default_include_headers = ['host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
-    def __init__(self, service):
-        self.service = service
+    def __init__(self):
+        pass
 
-    def get_sign_string_from_req(self, req, except_headers=None):
-        scope = self.get_request_scope(req, self.service)
+    @classmethod
+    def get_sign_string_from_req(cls, req, service, except_headers=None):
+        scope = cls.get_request_scope(req, service)
 
         # encode body and generate body hash
         if hasattr(req, 'body') and req.body is not None:
-            self.encode_body(req)
+            cls.encode_body(req)
             content_hash = hashlib.sha256(req.body)
         else:
             content_hash = hashlib.sha256(b'')
         req.headers[constants.HASHED_REQUEST_CONTENT] = content_hash.hexdigest()
 
         # generate signature
-        cano_headers, signed_headers = self.get_canonical_headers(req)
-        cano_req = self.get_canonical_request(req, cano_headers,
+        cano_headers, signed_headers = cls.get_canonical_headers(req)
+        cano_req = cls.get_canonical_request(req, cano_headers,
                                               signed_headers)
-        sig_string = self.get_sig_string(req, cano_req, scope)
+        sig_string = cls.get_sig_string(req, cano_req, scope)
         return sig_string.encode('utf-8')
 
-    def sign_request(self, req, access_key, secret_key):
-        sig_string = self.get_sign_string_from_req(req)
-        scope = self.get_request_scope(req, self.service)
-        signature = self.generate_signature(secret_key, sig_string)
-        cano_headers, signed_headers = self.get_canonical_headers(req)
-        req.headers[constants.AUTHORIZATION_HEADER] = self.create_authentication_headers(access_key, scope,
+    @classmethod
+    def sign_request(cls, req, access_key, signing_key, service):
+        sig_string = cls.get_sign_string_from_req(req, service)
+        scope = cls.get_request_scope(req, service)
+        signature = cls.generate_signature(signing_key.key, sig_string)
+        cano_headers, signed_headers = cls.get_canonical_headers(req)
+        req.headers[constants.AUTHORIZATION_HEADER] = cls.create_authentication_headers(access_key, scope,
                                                                                          signed_headers, signature)
+        return req
 
-    def create_authentication_headers(self, access_key, scope, signed_headers, signature):
+    @classmethod
+    def create_authentication_headers(cls, access_key, scope, signed_headers, signature):
         auth_str = 'HMAC-SHA256 '
         auth_str += 'Credential={}/{}, '.format(access_key, scope)
         auth_str += 'SignedHeaders={}, '.format(signed_headers)
         auth_str += 'Signature={}'.format(signature)
         return auth_str
 
-    def generate_signature(self, secret_key, sig_string):
+    @classmethod
+    def generate_signature(cls, secret_key, sig_string):
         hsh = hmac.new(secret_key, sig_string, hashlib.sha256)
         sig = hsh.hexdigest()
         return sig
@@ -384,14 +390,18 @@ class HMAC4Auth(object):
         return sig_string
 
 
-    def verify(service, req, secret_key):
-        hmac4_auth = HMAC4Auth(service)
+    @classmethod
+    def verify(cls, service, req, secret_key):
+        hmac4_auth = HMAC4Auth_Utils()
         access_key, signature = hmac4_auth.parse_access_key_and_signature(req)
+        date = cls.get_request_date(req)
         # secret_key = get_secret_key(access_key).secret_key
-        sig_string = hmac4_auth.get_sign_string_from_req(req)
-        regenerate_signature = hmac4_auth.generate_signature(secret_key, sig_string)
+        sig_string = hmac4_auth.get_sign_string_from_req(req, service)
+        signing_key = HMAC4SigningKey(secret_key, service, date)
+        regenerate_signature = hmac4_auth.generate_signature(signing_key.key, sig_string)
         if signature != regenerate_signature:
             raise UnauthorizedError("Invalid authenticated request")
 
-    def parse_service(req):
+    @classmethod
+    def parse_service(cls, req):
         return "" # TODO: list all provided service from API
