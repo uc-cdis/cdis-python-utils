@@ -3,9 +3,27 @@ from hmac4_signing_key import HMAC4SigningKey
 from hmac4_auth_utils import sign_request
 
 class HMAC4Auth(AuthBase):
+    """
+    Requests authentication class providing AWS version 4 authentication for
+    HTTP requests. Implements header-based authentication only, GET URL
+    parameter and POST parameter authentication are not supported.
+
+    You can reuse HMAC4Auth instances to sign as many requests as you need.
+
+    Basic usage
+    -----------
+    >>> from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
+    >>> import requests
+    >>> sig_key = HMAC4SigningKey(secret_key, service, date, False)
+    >>> auth = HMAC4Auth(access_key, sig_key)
+    >>> endpoint = 'link.to.service'
+    >>> response = requests.get(endpoint, auth=auth)
+    >>> response.text
+    """
+
     def __init__(self, *args, **kwargs):
         """
-        AWS4Auth instances can be created by supplying key scope parameters
+        HMAC4Auth instances can be created by supplying key scope parameters
         directly or by using an AWS4SigningKey instance:
 
         >>> auth = HMAC4Auth(access_key, signing_key[, raise_invalid_date=False])
