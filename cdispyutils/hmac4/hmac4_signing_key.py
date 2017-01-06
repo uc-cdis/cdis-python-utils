@@ -43,7 +43,7 @@ class HMAC4SigningKey:
     def __init__(self, secret_key, service, date=None,
                  store_secret_key=True):
         """
-        >>> HMAC4SigningKey(secret_key, region, service[, date]
+        >>> HMAC4SigningKey(secret_key, service[, date]
         ...                [, store_secret_key])
 
         secret_key -- This is your HMAC secret access key
