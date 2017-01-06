@@ -1,6 +1,6 @@
 from requests.auth import AuthBase
 from hmac4_signing_key import HMAC4SigningKey
-from hmac4_auth_utils import HMAC4Auth_Utils
+from hmac4_auth_utils import sign_request
 
 class HMAC4Auth(object):
     def __init__(self, *args, **kwargs):
@@ -57,5 +57,5 @@ class HMAC4Auth(object):
         AuthBase.__init__(self)
 
     def __call__(self, req):
-        req = HMAC4Auth_Utils.sign_request(req, self.access_key, self.signing_key, self.service)
+        req = sign_request(req, self.access_key, self.signing_key, self.service)
         return req
