@@ -10,7 +10,7 @@ class HMAC4Auth(AuthBase):
 
     You can reuse HMAC4Auth instances to sign as many requests as you need.
 
-    Basic usage
+    Basic usage in client side to sign the request
     -----------
     >>> from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
     >>> import requests

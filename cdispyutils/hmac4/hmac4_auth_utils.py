@@ -50,7 +50,7 @@ HMACv4 for HTTP requests. Implements header-based authentication only
 
 You can reuse HMAC4Auth instances to sign as many requests as you need.
 
-Basic usage
+Basic usage in server side to verify the requests.
 -----------
 >>> from flask import request
 >>> from cdispyutils.hmac4.hmac4_auth_utils import verify, parse_access_key_and_signature
