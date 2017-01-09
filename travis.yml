@@ -1,0 +1,15 @@
+language: python
+
+python:
+  - "2.7"
+
+sudo: false
+cache:
+  pip: true
+
+install:
+  - pip install -r requirements.txt
+  - pip install -r dev-requirements.txt
+
+script:
+  - "PYTHONPATH=. py.test -vv test/"

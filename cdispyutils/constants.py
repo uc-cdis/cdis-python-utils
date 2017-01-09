@@ -1,0 +1,7 @@
+BIONIMBUS_REQUEST = 'bionimbus_request'
+ALGORITHM = 'HMAC-SHA256'
+REQUEST_DATE_HEADER = 'x-amz-date'
+HASHED_REQUEST_CONTENT = 'x-amz-content-sha256'
+REQUEST_HEADER_PREFIX = 'x-amz-'
+AUTHORIZATION_HEADER = 'Authorization'
+CLIENT_CONTEXT_HEADER = 'x-amz-client-context'
