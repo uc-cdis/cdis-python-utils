@@ -26,19 +26,19 @@ except ImportError:
 
 class DateFormatError(Exception): pass
 
-class Utils_Error(Exception):
+class HMAC4_Error(Exception):
     def __init__(self, message='', json=None):
         self.message = message
         self.json = json
 
 
-class UnauthorizedError(Utils_Error):
+class UnauthorizedError(HMAC4_Error):
     def __init__(self, message='', json=None):
         self.code = 401
         super(UnauthorizedError, self).__init__(message, json)
 
 
-class ExpiredTimeError(Utils_Error):
+class ExpiredTimeError(HMAC4_Error):
     def __init__(self, message='', json=None):
         self.code = 500
         super(ExpiredTimeError, self).__init__(message, json)
@@ -103,9 +103,14 @@ def generate_signature(secret_key, sig_string):
     return sig
 
 def parse_access_key_and_signature(req):
-    authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
-    vals = re.split('= /', authorization_header)
-    return vals[2], vals[7]
+    try:
+        authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
+        vals = re.split('= /', authorization_header)
+        if len(vals) < 8:
+            raise UnauthorizedError("Incorrect authentication format!")
+        return vals[2], vals[7]
+    except:
+        raise UnauthorizedError("No authentication provided!")
 
 def get_request_scope(req, service):
     date = get_request_date(req)
