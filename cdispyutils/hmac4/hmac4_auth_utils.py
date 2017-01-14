@@ -14,6 +14,7 @@ import re
 import shlex
 import posixpath
 import cdispyutils.constants as constants
+import copy
 
 from hmac4_signing_key import HMAC4SigningKey
 from six import PY2, text_type
@@ -28,20 +29,20 @@ class DateFormatError(Exception): pass
 
 class HMAC4_Error(Exception):
     def __init__(self, message='', json=None):
-        self.message = message
+        super(HMAC4_Error, self).__init__(message)
         self.json = json
 
 
 class UnauthorizedError(HMAC4_Error):
     def __init__(self, message='', json=None):
-        self.code = 401
         super(UnauthorizedError, self).__init__(message, json)
+        self.code = 401
 
 
 class ExpiredTimeError(HMAC4_Error):
     def __init__(self, message='', json=None):
-        self.code = 500
         super(ExpiredTimeError, self).__init__(message, json)
+        self.code = 500
 
 
 """
@@ -61,11 +62,25 @@ Basic usage in server side to verify the requests.
 >>> verify(service, req, secret_key)
 """
 
-default_include_headers = ['host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
+default_include_headers = ['Host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
 def get_sign_string_from_req(req, service, except_headers=None):
     scope = get_request_scope(req, service)
+    # generate signature
+    cano_headers, signed_headers = get_canonical_headers(req)
+    cano_req = get_canonical_request(req, cano_headers,
+                                          signed_headers)
+    sig_string = get_sig_string(req, cano_req, scope)
+    return sig_string.encode('utf-8')
 
+def set_req_date(req):
+    if get_request_date(req) is None:
+        if 'date' in req.headers: del req.headers['date']
+        if constants.REQUEST_DATE_HEADER in req.headers: del req.headers[constants.REQUEST_DATE_HEADER]
+        now = datetime.datetime.utcnow()
+        req.headers[constants.REQUEST_DATE_HEADER] = now.strftime('%Y%m%dT%H%M%SZ')
+
+def set_encoded_body(req):
     # encode body and generate body hash
     if hasattr(req, 'body') and req.body is not None:
         encode_body(req)
@@ -74,14 +89,9 @@ def get_sign_string_from_req(req, service, except_headers=None):
         content_hash = hashlib.sha256(b'')
     req.headers[constants.HASHED_REQUEST_CONTENT] = content_hash.hexdigest()
 
-    # generate signature
-    cano_headers, signed_headers = get_canonical_headers(req)
-    cano_req = get_canonical_request(req, cano_headers,
-                                          signed_headers)
-    sig_string = get_sig_string(req, cano_req, scope)
-    return sig_string.encode('utf-8')
-
 def sign_request(req, access_key, signing_key, service):
+    set_req_date(req)
+    set_encoded_body(req)
     sig_string = get_sign_string_from_req(req, service)
     scope = get_request_scope(req, service)
     signature = generate_signature(signing_key.key, sig_string)
@@ -105,10 +115,10 @@ def generate_signature(secret_key, sig_string):
 def parse_access_key_and_signature(req):
     try:
         authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
-        vals = re.split('= /', authorization_header)
-        if len(vals) < 8:
+        vals = re.split('\s|/|=', authorization_header)
+        if len(vals) < 10:
             raise UnauthorizedError("Incorrect authentication format!")
-        return vals[2], vals[7]
+        return vals[2], vals[10]
     except:
         raise UnauthorizedError("No authentication provided!")
 
@@ -193,7 +203,7 @@ def get_request_date(req):
         except DateFormatError:
             continue
         try:
-            date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
         except ValueError:
             continue
         else:
@@ -276,12 +286,12 @@ def get_canonical_headers(req, include=None):
     if include is None:
         include = default_include_headers
     include = [x.lower() for x in include]
-    headers = req.headers.copy()
+    headers = copy.copy(dict(req.headers))
     # Temporarily include the host header - AWS requires it to be included
     # in the signed headers, but Requests doesn't include it in a
     # PreparedRequest
-    if 'host' not in headers:
-        headers['host'] = urlparse(req.url).netloc.split(':')[0]
+    headers['Host'] = urlparse(req.url).netloc.split(':')[0]
+
     # Aggregate for upper/lowercase header name collisions in header names,
     # AMZ requires values of colliding headers be concatenated into a
     # single header with lowercase name.  Although this is not possible with
@@ -417,7 +427,7 @@ def verify(service, req, secret_key):
         raise ExpiredTimeError("Request took so long time")
     # secret_key = get_secret_key(access_key).secret_key
     sig_string = get_sign_string_from_req(req, service)
-    signing_key = HMAC4SigningKey(secret_key, service, req_date)
+    signing_key = HMAC4SigningKey(secret_key, service, req_date.strftime('%Y%m%d'))
     regenerate_signature = generate_signature(signing_key.key, sig_string)
     if signature != regenerate_signature:
         raise UnauthorizedError("Invalid authenticated request")
