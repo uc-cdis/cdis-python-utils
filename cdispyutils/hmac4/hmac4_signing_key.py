@@ -79,7 +79,7 @@ class HMAC4SigningKey:
         """
 
         self.service = service
-        self.date = date or datetime.utcnow().strftime('%Y%m%d')
+        self.date = date or datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
         self.store_secret_key = store_secret_key
         self.secret_key = secret_key if self.store_secret_key else None
         self.key = self.generate_key(secret_key,

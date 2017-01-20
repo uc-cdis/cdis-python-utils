@@ -74,7 +74,7 @@ def get_sign_string_from_req(req, service, except_headers=None):
     return sig_string.encode('utf-8')
 
 def set_req_date(req):
-    if get_request_date(req) is None:
+    if get_exact_request_time(req) is None:
         if 'date' in req.headers: del req.headers['date']
         if constants.REQUEST_DATE_HEADER in req.headers: del req.headers[constants.REQUEST_DATE_HEADER]
         now = datetime.datetime.utcnow()
@@ -126,7 +126,7 @@ def get_request_scope(req, service):
     date = get_request_date(req)
     return '{}/{}/{}'.format(date, service, constants.BIONIMBUS_REQUEST)
 
-def parse_date(date_str):
+def normalize_date_format(date_str):
     """
     Check if date_str is in a recognised format and return an ISO
     yyyy-mm-dd format version if so. Raise DateFormatError if not.
@@ -178,6 +178,7 @@ def parse_date(date_str):
         if m:
             out_date = xform(m)
             break
+
     if out_date is None:
         raise DateFormatError
     else:
@@ -199,12 +200,37 @@ def get_request_date(req):
         if header not in req.headers:
             continue
         try:
-            date_str = parse_date(req.headers[header])
+            date_str = normalize_date_format(req.headers[header])
         except DateFormatError:
             continue
         try:
             date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
         except ValueError:
+            continue
+        else:
+            break
+
+    return date
+
+def get_exact_request_time(req):
+    """
+    Try to pull a date from the request by looking first at the
+    x-amz-date header, and if that's not present then the Date header.
+
+    Return a datetime.date object, or None if neither date header
+    is found or is in a recognisable format.
+
+    req -- a requests PreparedRequest object
+
+    """
+    date = None
+    for header in [constants.REQUEST_DATE_HEADER, 'date']:
+        if header not in req.headers:
+            continue
+        try:
+            date = datetime.datetime.strptime(req.headers[header], '%Y%m%dT%H%M%SZ')
+            print(date)
+        except DateFormatError:
             continue
         else:
             break
@@ -418,11 +444,11 @@ def get_sig_string(req, cano_req, scope):
     return sig_string
 
 def check_expired_time(req_date):
-    return req_date + datetime.timedelta(minutes=15) < datetime.datetime.utcnow()
+    return req_date + datetime.timedelta(minutes=15) > datetime.datetime.utcnow()
 
 def verify(service, req, secret_key):
     access_key, signature = parse_access_key_and_signature(req)
-    req_date = get_request_date(req)
+    req_date = get_exact_request_time(req)
     if not check_expired_time(req_date):
         raise ExpiredTimeError("Request took so long time")
     # secret_key = get_secret_key(access_key).secret_key
