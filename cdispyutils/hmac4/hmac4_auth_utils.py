@@ -453,7 +453,7 @@ def verify(service, req, secret_key):
         raise ExpiredTimeError("Request took so long time")
     # secret_key = get_secret_key(access_key).secret_key
     sig_string = get_sign_string_from_req(req, service)
-    signing_key = HMAC4SigningKey(secret_key, service, req_date.strftime('%Y%m%d'))
+    signing_key = HMAC4SigningKey(secret_key, service, req_date.strftime('%Y%m%dT%H%M%SZ'))
     regenerate_signature = generate_signature(signing_key.key, sig_string)
     if signature != regenerate_signature:
         raise UnauthorizedError("Invalid authenticated request")

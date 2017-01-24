@@ -51,7 +51,7 @@ class HMAC4SigningKey:
                       endpoints at:
                       http://docs.aws.amazon.com/general/latest/gr/rande.html
                       e.g. elasticbeanstalk
-        date       -- 8-digit date of the form YYYYMMDD. Key is only valid for
+        date       -- Date of the form %Y%m%dT%H%M%SZ. Key is only valid for
                       requests with a Date or X-Amz-Date header matching this
                       date. If date is not supplied the current date is
                       used.
