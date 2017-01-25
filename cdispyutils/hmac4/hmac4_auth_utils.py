@@ -1,6 +1,29 @@
 """
-Provides HMAC4Auth class for signing request.
-This class inspired by AWS4SigningKey from requests_aws4auth
+Provides hmac4 utils for signing request.
+This module is inspired by requests_aws4auth
+
+Authentication utils class providing functions that generate and check
+HMACv4 for HTTP requests. Implements header-based authentication only
+
+
+Basic usage on server side to verify the requests.
+-----------
+>>> from flask import request
+>>> from cdispyutils.hmac4.hmac4_auth_utils import verify, parse_access_key_and_signature
+>>> req = request
+>>> service = parse_service(req)
+>>> access_key, signature = parse_access_key_and_signature(req)
+>>> secret_key = get_secret_key(access_key)
+>>> verify(service, req, secret_key)
+
+Basic usage on client side to sign the request
+-----------
+>>> from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
+>>> import requests
+>>> sig_key = HMAC4SigningKey(secret_key, service)
+>>> auth = HMAC4Auth(access_key, sig_key)
+>>> endpoint = 'link.to.service'
+>>> response = requests.get(endpoint, auth=auth)
 
 """
 
@@ -45,22 +68,6 @@ class ExpiredTimeError(HMAC4_Error):
         self.code = 500
 
 
-"""
-Authentication utils class providing functions that generate and check
-HMACv4 for HTTP requests. Implements header-based authentication only
-
-You can reuse HMAC4Auth instances to sign as many requests as you need.
-
-Basic usage in server side to verify the requests.
------------
->>> from flask import request
->>> from cdispyutils.hmac4.hmac4_auth_utils import verify, parse_access_key_and_signature
->>> req = request
->>> service = parse_service(req)
->>> access_key, signature = parse_access_key_and_signature(req)
->>> secret_key = get_secret_key(access_key)
->>> verify(service, req, secret_key)
-"""
 
 default_include_headers = ['Host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
