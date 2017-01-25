@@ -63,5 +63,5 @@ class HMAC4Auth(AuthBase):
         super(HMAC4Auth, self).__init__()
 
     def __call__(self, req):
-        req = sign_request(req, self.access_key, self.signing_key, self.service)
+        req = sign_request(req, self.access_key, self.signing_key, self.service, self.date)
         return req

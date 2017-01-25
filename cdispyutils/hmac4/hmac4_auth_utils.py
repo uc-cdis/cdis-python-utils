@@ -73,12 +73,9 @@ def get_sign_string_from_req(req, service, except_headers=None):
     sig_string = get_sig_string(req, cano_req, scope)
     return sig_string.encode('utf-8')
 
-def set_req_date(req):
-    if get_exact_request_time(req) is None:
-        if 'date' in req.headers: del req.headers['date']
-        if constants.REQUEST_DATE_HEADER in req.headers: del req.headers[constants.REQUEST_DATE_HEADER]
-        now = datetime.datetime.utcnow()
-        req.headers[constants.REQUEST_DATE_HEADER] = now.strftime('%Y%m%dT%H%M%SZ')
+def set_req_date(req, req_date):
+    if constants.REQUEST_DATE_HEADER in req.headers: del req.headers[constants.REQUEST_DATE_HEADER]
+    req.headers[constants.REQUEST_DATE_HEADER] = req_date
 
 def set_encoded_body(req):
     # encode body and generate body hash
@@ -89,8 +86,8 @@ def set_encoded_body(req):
         content_hash = hashlib.sha256(b'')
     req.headers[constants.HASHED_REQUEST_CONTENT] = content_hash.hexdigest()
 
-def sign_request(req, access_key, signing_key, service):
-    set_req_date(req)
+def sign_request(req, access_key, signing_key, service, req_date):
+    set_req_date(req, req_date)
     set_encoded_body(req)
     sig_string = get_sign_string_from_req(req, service)
     scope = get_request_scope(req, service)
