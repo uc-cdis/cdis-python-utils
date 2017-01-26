@@ -1,32 +1,3 @@
-"""
-Provides hmac4 utils for signing request.
-This module is inspired by requests_aws4auth
-
-Authentication utils class providing functions that generate and check
-HMACv4 for HTTP requests. Implements header-based authentication only
-
-
-Basic usage on server side to verify the requests.
------------
->>> from flask import request
->>> from cdispyutils.hmac4.hmac4_auth_utils import verify, parse_access_key_and_signature
->>> req = request
->>> service = parse_service(req)
->>> access_key, signature = parse_access_key_and_signature(req)
->>> secret_key = get_secret_key(access_key)
->>> verify(service, req, secret_key)
-
-Basic usage on client side to sign the request
------------
->>> from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
->>> import requests
->>> sig_key = HMAC4SigningKey(secret_key, service)
->>> auth = HMAC4Auth(access_key, sig_key)
->>> endpoint = 'link.to.service'
->>> response = requests.get(endpoint, auth=auth)
-
-"""
-
 # Licensed under the MIT License:
 # http://opensource.org/licenses/MIT
 
@@ -39,7 +10,7 @@ import posixpath
 import cdispyutils.constants as constants
 import copy
 
-from hmac4_signing_key import HMAC4SigningKey
+from .hmac4_signing_key import HMAC4SigningKey
 from six import PY2, text_type
 
 try:
@@ -48,7 +19,10 @@ except ImportError:
     from urlparse import urlparse, parse_qs
     from urllib import quote, unquote
 
-class DateFormatError(Exception): pass
+
+class DateFormatError(Exception):
+    pass
+
 
 class HMAC4_Error(Exception):
     def __init__(self, message='', json=None):
@@ -68,21 +42,25 @@ class ExpiredTimeError(HMAC4_Error):
         self.code = 500
 
 
+DEFAULT_INCLUDE_HEADERS = [
+    'Host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
-default_include_headers = ['Host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
 def get_sign_string_from_req(req, service, except_headers=None):
     scope = get_request_scope(req, service)
     # generate signature
     cano_headers, signed_headers = get_canonical_headers(req)
-    cano_req = get_canonical_request(req, cano_headers,
-                                          signed_headers)
+    cano_req = get_canonical_request(
+        req, cano_headers, signed_headers)
     sig_string = get_sig_string(req, cano_req, scope)
     return sig_string.encode('utf-8')
 
+
 def set_req_date(req, req_date):
-    if constants.REQUEST_DATE_HEADER in req.headers: del req.headers[constants.REQUEST_DATE_HEADER]
+    if constants.REQUEST_DATE_HEADER in req.headers:
+        del req.headers[constants.REQUEST_DATE_HEADER]
     req.headers[constants.REQUEST_DATE_HEADER] = req_date
+
 
 def set_encoded_body(req):
     # encode body and generate body hash
@@ -93,6 +71,7 @@ def set_encoded_body(req):
         content_hash = hashlib.sha256(b'')
     req.headers[constants.HASHED_REQUEST_CONTENT] = content_hash.hexdigest()
 
+
 def sign_request(req, access_key, signing_key, service, req_date):
     set_req_date(req, req_date)
     set_encoded_body(req)
@@ -100,21 +79,26 @@ def sign_request(req, access_key, signing_key, service, req_date):
     scope = get_request_scope(req, service)
     signature = generate_signature(signing_key.key, sig_string)
     cano_headers, signed_headers = get_canonical_headers(req)
-    req.headers[constants.AUTHORIZATION_HEADER] = create_authentication_headers(access_key, scope,
-                                                                                     signed_headers, signature)
+    req.headers[constants.AUTHORIZATION_HEADER] = (
+        create_authentication_headers
+        (access_key, scope, signed_headers, signature))
     return req
 
-def create_authentication_headers(access_key, scope, signed_headers, signature):
+
+def create_authentication_headers(
+        access_key, scope, signed_headers, signature):
     auth_str = 'HMAC-SHA256 '
     auth_str += 'Credential={}/{}, '.format(access_key, scope)
     auth_str += 'SignedHeaders={}, '.format(signed_headers)
     auth_str += 'Signature={}'.format(signature)
     return auth_str
 
+
 def generate_signature(secret_key, sig_string):
     hsh = hmac.new(secret_key, sig_string, hashlib.sha256)
     sig = hsh.hexdigest()
     return sig
+
 
 def parse_access_key_and_signature(req):
     try:
@@ -126,9 +110,11 @@ def parse_access_key_and_signature(req):
     except:
         raise UnauthorizedError("No authentication provided!")
 
+
 def get_request_scope(req, service):
     date = get_request_date(req)
     return '{}/{}/{}'.format(date, service, constants.BIONIMBUS_REQUEST)
+
 
 def normalize_date_format(date_str):
     """
@@ -188,6 +174,7 @@ def normalize_date_format(date_str):
     else:
         return out_date
 
+
 def get_request_date(req):
     """
     Try to pull a date from the request by looking first at the
@@ -216,6 +203,7 @@ def get_request_date(req):
 
     return date
 
+
 def get_exact_request_time(req):
     """
     Try to pull a date from the request by looking first at the
@@ -232,14 +220,15 @@ def get_exact_request_time(req):
         if header not in req.headers:
             continue
         try:
-            date = datetime.datetime.strptime(req.headers[header], '%Y%m%dT%H%M%SZ')
-            print(date)
+            date = datetime.datetime.strptime(
+                req.headers[header], '%Y%m%dT%H%M%SZ')
         except DateFormatError:
             continue
         else:
             break
 
     return date
+
 
 def encode_body(req):
     """
@@ -295,6 +284,7 @@ def get_canonical_request(req, cano_headers, signed_headers):
     cano_req = '\n'.join(req_parts)
     return cano_req
 
+
 def get_canonical_headers(req, include=None):
     """
     Generate the Canonical Headers section of the Canonical Request.
@@ -314,7 +304,7 @@ def get_canonical_headers(req, include=None):
 
     """
     if include is None:
-        include = default_include_headers
+        include = DEFAULT_INCLUDE_HEADERS
     include = [x.lower() for x in include]
     headers = copy.copy(dict(req.headers))
     # Temporarily include the host header - AWS requires it to be included
@@ -332,8 +322,9 @@ def get_canonical_headers(req, include=None):
         hdr = hdr.strip().lower()
         val = normalize_whitespace(val).strip()
         if (hdr in include or '*' in include or
-                ('x-amz-*' in include and hdr.startswith(constants.REQUEST_HEADER_PREFIX) and not
-                hdr == constants.CLIENT_CONTEXT_HEADER)):
+                ('x-amz-*' in include
+                 and hdr.startswith(constants.REQUEST_HEADER_PREFIX)
+                 and not hdr == constants.CLIENT_CONTEXT_HEADER)):
             vals = cano_headers_dict.setdefault(hdr, [])
             vals.append(val)
     # Flatten cano_headers dict to string and generate signed_headers
@@ -422,6 +413,7 @@ def format_cano_querystring(qs):
         qs = unicode(qs)
     return qs
 
+
 def normalize_whitespace(text):
     """
     Replace runs of whitespace with a single space.
@@ -430,6 +422,7 @@ def normalize_whitespace(text):
 
     """
     return ' '.join(shlex.split(text, posix=False))
+
 
 def get_sig_string(req, cano_req, scope):
     """
@@ -447,8 +440,12 @@ def get_sig_string(req, cano_req, scope):
     sig_string = '\n'.join(sig_items)
     return sig_string
 
+
 def check_expired_time(req_date):
-    return req_date + datetime.timedelta(minutes=15) > datetime.datetime.utcnow()
+    return (
+        req_date + datetime.timedelta(minutes=15)
+        > datetime.datetime.utcnow())
+
 
 def verify(service, req, secret_key):
     access_key, signature = parse_access_key_and_signature(req)
@@ -457,10 +454,13 @@ def verify(service, req, secret_key):
         raise ExpiredTimeError("Request took so long time")
     # secret_key = get_secret_key(access_key).secret_key
     sig_string = get_sign_string_from_req(req, service)
-    signing_key = HMAC4SigningKey(secret_key, service, req_date.strftime('%Y%m%dT%H%M%SZ'))
+    signing_key = HMAC4SigningKey(
+        secret_key, service, req_date.strftime('%Y%m%dT%H%M%SZ'))
     regenerate_signature = generate_signature(signing_key.key, sig_string)
     if signature != regenerate_signature:
         raise UnauthorizedError("Invalid authenticated request")
+    return access_key
 
 def parse_service(req):
-    return "" # TODO: list all provided service from API
+    # TODO: list all provided service from API
+    raise NotImplementedError

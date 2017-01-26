@@ -1,6 +1,6 @@
 from requests.auth import AuthBase
-from hmac4_signing_key import HMAC4SigningKey
-from hmac4_auth_utils import sign_request
+from .hmac4_auth_utils import sign_request
+
 
 class HMAC4Auth(AuthBase):
     """
