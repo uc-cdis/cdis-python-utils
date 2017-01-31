@@ -109,7 +109,7 @@ def test_generate_signature():
     req = request_from_text(req_text)
     del req.headers['content-length']
     include_hdrs = list(req.headers)
-    auth = HMAC4Auth('dummy', key, include_hdrs=include_hdrs)
+    auth = HMAC4Auth('dummy', key)
     encode_body(req)
     hsh = hashlib.sha256(req.body)
     req.headers['x-amz-content-sha256'] = hsh.hexdigest()

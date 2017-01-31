@@ -1,6 +1,6 @@
 from requests.auth import AuthBase
-from hmac4_signing_key import HMAC4SigningKey
-from hmac4_auth_utils import sign_request
+from .hmac4_auth_utils import sign_request
+
 
 class HMAC4Auth(AuthBase):
     """
@@ -10,15 +10,14 @@ class HMAC4Auth(AuthBase):
 
     You can reuse HMAC4Auth instances to sign as many requests as you need.
 
-    Basic usage in client side to sign the request
+    Basic usage on client side to sign the request
     -----------
     >>> from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
     >>> import requests
-    >>> sig_key = HMAC4SigningKey(secret_key, service, date, False)
+    >>> sig_key = HMAC4SigningKey(secret_key, service)
     >>> auth = HMAC4Auth(access_key, sig_key)
     >>> endpoint = 'link.to.service'
     >>> response = requests.get(endpoint, auth=auth)
-    >>> response.text
     """
 
     def __init__(self, access_key, signing_key, raise_invalid_date=False):
@@ -63,5 +62,5 @@ class HMAC4Auth(AuthBase):
         super(HMAC4Auth, self).__init__()
 
     def __call__(self, req):
-        req = sign_request(req, self.access_key, self.signing_key, self.service)
+        req = sign_request(req, self.access_key, self.signing_key, self.service, self.date)
         return req
