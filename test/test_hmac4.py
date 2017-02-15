@@ -118,13 +118,3 @@ def test_generate_signature():
     expected = ('ced6826de92d2bdeed8f846f0bf508e8559e98e4b0199114b84c541'
                 '74deb456c')
     assert signature, expected
-
-
-def test_sign_request_and_verify():
-    secret_key = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
-    service = 'submission'
-    date = '20110909'
-    key = HMAC4SigningKey(secret_key, service, date)
-    auth = HMAC4Auth('dummy', key)
-
-    assert signature, expected
