@@ -8,7 +8,7 @@ class OAuth2Error:
         self.code = 400
 
 
-def authorize(self, user_api, get_code):
+def authorize(user_api, get_code):
     code = get_code()
     if not code:
         raise OAuth2Error("No authorization code provided")
