@@ -37,7 +37,6 @@ class OAuth2Client(object):
                            scope=self.scope))
         )
 
-    @classmethod
     def get_token(self, code):
         '''
         get access token from code
