@@ -1,7 +1,7 @@
 from urlparse import urljoin
 import requests
 from urllib import urlencode
-from .log import get_logger
+from ..log import get_logger
 
 logger = get_logger('OAuth2Client')
 
@@ -37,6 +37,7 @@ class OAuth2Client(object):
                            scope=self.scope))
         )
 
+    @classmethod
     def get_token(self, code):
         '''
         get access token from code

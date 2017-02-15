@@ -24,19 +24,19 @@ class DateFormatError(Exception):
     pass
 
 
-class HMAC4_Error(Exception):
+class HMAC4Error(Exception):
     def __init__(self, message='', json=None):
-        super(HMAC4_Error, self).__init__(message)
+        self.message = message
         self.json = json
 
 
-class UnauthorizedError(HMAC4_Error):
+class UnauthorizedError(HMAC4Error):
     def __init__(self, message='', json=None):
         super(UnauthorizedError, self).__init__(message, json)
         self.code = 401
 
 
-class ExpiredTimeError(HMAC4_Error):
+class ExpiredTimeError(HMAC4Error):
     def __init__(self, message='', json=None):
         super(ExpiredTimeError, self).__init__(message, json)
         self.code = 500
@@ -70,19 +70,6 @@ def set_encoded_body(req):
     else:
         content_hash = hashlib.sha256(b'')
     req.headers[constants.HASHED_REQUEST_CONTENT] = content_hash.hexdigest()
-
-
-def sign_request(req, access_key, signing_key, service, req_date):
-    set_req_date(req, req_date)
-    set_encoded_body(req)
-    sig_string = get_sign_string_from_req(req, service)
-    scope = get_request_scope(req, service)
-    signature = generate_signature(signing_key.key, sig_string)
-    cano_headers, signed_headers = get_canonical_headers(req)
-    req.headers[constants.AUTHORIZATION_HEADER] = (
-        create_authentication_headers
-        (access_key, scope, signed_headers, signature))
-    return req
 
 
 def create_authentication_headers(
@@ -447,19 +434,48 @@ def check_expired_time(req_date):
         > datetime.datetime.utcnow())
 
 
+# Writing unit-test for:
+# - set_req_date
+# - set_encoded_body
+# - get_sign_string_from_req
+# - get_request_scope
+# - generate_signature
+# - get_canonical_headers
+def sign_request(req, access_key, signing_key, service, req_date):
+    set_req_date(req, req_date)
+    set_encoded_body(req)
+    scope = get_request_scope(req, service)
+
+    sig_string = get_sign_string_from_req(req, service)
+    signature = generate_signature(signing_key.key, sig_string)
+
+    cano_headers, signed_headers = get_canonical_headers(req)
+    req.headers[constants.AUTHORIZATION_HEADER] = (
+        create_authentication_headers
+        (access_key, scope, signed_headers, signature))
+    return req
+
+
+# Writing unit-test for:
+# - parse_access_key_and_signature
+# - get_exact_request_time
+# - get_sign_string_from_req
+# - generate_signature
 def verify(service, req, secret_key):
     access_key, signature = parse_access_key_and_signature(req)
     req_date = get_exact_request_time(req)
     if not check_expired_time(req_date):
         raise ExpiredTimeError("Request took so long time")
+
     # secret_key = get_secret_key(access_key).secret_key
     sig_string = get_sign_string_from_req(req, service)
     signing_key = HMAC4SigningKey(
-        secret_key, service, req_date.strftime('%Y%m%dT%H%M%SZ'))
+        secret_key, service, req_date.strftime(constants.DATE_TIME_FORMAT))
     regenerate_signature = generate_signature(signing_key.key, sig_string)
     if signature != regenerate_signature:
         raise UnauthorizedError("Invalid authenticated request")
     return access_key
+
 
 def parse_service(req):
     # TODO: list all provided service from API
