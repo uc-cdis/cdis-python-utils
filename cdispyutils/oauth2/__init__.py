@@ -8,13 +8,9 @@ class OAuth2Error:
         self.code = 400
 
 
-def authorize(oauth_client, user_api, get_code):
-    try:
-        code = get_code()
-        if not code:
-            raise OAuth2Error("No authorization code provided")
-    except Exception as ex:
-        raise OAuth2Error("No authorization code provided: {}".format(ex))
+def authorize(oauth_client, user_api, code):
+    if not code:
+        raise OAuth2Error("No authorization code provided")
 
     token_response = oauth_client.get_token(code)
     access_token = token_response.get('access_token')
@@ -31,4 +27,5 @@ def authorize(oauth_client, user_api, get_code):
             return username
 
     else:
+        print(token_response)
         raise OAuth2Error(json=token_response)

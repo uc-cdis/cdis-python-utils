@@ -72,6 +72,7 @@ def test_generate_key():
     key = [ord(x) for x in key] if PY2 else list(key)
     assert key, expected
 
+
 def test_instantiation_generate_key():
     """
     Using example data from:
