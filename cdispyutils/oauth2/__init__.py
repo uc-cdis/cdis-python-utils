@@ -27,5 +27,4 @@ def authorize(oauth_client, user_api, code):
             return username
 
     else:
-        print(token_response)
         raise OAuth2Error(json=token_response)

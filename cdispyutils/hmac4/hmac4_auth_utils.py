@@ -434,7 +434,7 @@ def check_expired_time(req_date):
         > datetime.datetime.utcnow())
 
 
-# Writing unit-test for:
+# TODO (thanh): write unit-test for:
 # - set_req_date
 # - set_encoded_body
 # - get_sign_string_from_req
@@ -456,7 +456,7 @@ def sign_request(req, access_key, signing_key, service, req_date):
     return req
 
 
-# Writing unit-test for:
+# TODO (thanh): write unit-test for:
 # - parse_access_key_and_signature
 # - get_exact_request_time
 # - get_sign_string_from_req
