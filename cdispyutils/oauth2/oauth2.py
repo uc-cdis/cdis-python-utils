@@ -14,10 +14,12 @@ class OAuth2Client(object):
     '''
     def __init__(self, client_id, client_secret, redirect_uri,
                  oauth_provider='https://bionimbus-pdc.opensciencedatacloud.org/api/oauth2/',
+                 internal_oauth_provider=None,
                  scope='user'):
         self.client_id = client_id
         self.client_secret = client_secret
         self.oauth_provider = oauth_provider
+        self.internal_oauth = internal_oauth_provider or oauth_provider
         self.redirect_uri = redirect_uri
         self.scope = scope
 
@@ -58,7 +60,7 @@ class OAuth2Client(object):
             'redirect_uri': self.redirect_uri
         }
         try:
-            r = requests.post(urljoin(self.oauth_provider, 'token'), data=data)
+            r = requests.post(urljoin(self.internal_oauth, 'token'), data=data)
             return r.json()
         except Exception as e:
             logger.exception("Fail to reach oauth provider")
@@ -76,7 +78,7 @@ class OAuth2Client(object):
             'redirect_uri': self.redirect_uri
         }
         try:
-            r = requests.post(urljoin(self.oauth_provider, 'token'), data=data)
+            r = requests.post(urljoin(self.internal_oauth, 'token'), data=data)
             return r.json()
         except Exception as e:
             logger.exception("Fail to reach oauth provider")
