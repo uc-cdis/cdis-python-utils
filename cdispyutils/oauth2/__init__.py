@@ -5,6 +5,7 @@ import requests
 class OAuth2Error:
     def __init__(self, message='', json=None):
         self.message = message
+        self.json = json
         self.code = 400
 
 
