@@ -2,7 +2,7 @@ from oauth2 import OAuth2Client
 import requests
 
 
-class OAuth2Error:
+class OAuth2Error(Exception):
     def __init__(self, message='', json=None):
         self.message = message
         self.json = json
