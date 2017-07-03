@@ -9,6 +9,7 @@ import shlex
 import posixpath
 import cdispyutils.constants as constants
 import copy
+from requests import Request
 
 from .hmac4_signing_key import HMAC4SigningKey
 from six import PY2, text_type
@@ -46,10 +47,10 @@ DEFAULT_INCLUDE_HEADERS = [
     'Host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
 
-def get_sign_string_from_req(req, service, except_headers=None):
+def get_sign_string_from_req(req, service, except_headers=None, include=None):
     scope = get_request_scope(req, service)
     # generate signature
-    cano_headers, signed_headers = get_canonical_headers(req)
+    cano_headers, signed_headers = get_canonical_headers(req, include)
     cano_req = get_canonical_request(
         req, cano_headers, signed_headers)
     sig_string = get_sig_string(req, cano_req, scope)
@@ -90,16 +91,21 @@ def generate_signature(secret_key, sig_string):
 def parse_access_key_and_signature(req):
     try:
         authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
-        vals = re.split('\s|/|=', authorization_header)
-        if len(vals) < 10:
-            raise UnauthorizedError("Incorrect authentication format!")
-        return vals[2], vals[10]
     except:
         raise UnauthorizedError("No authentication provided!")
+    try:
+        signature = re.match(r'.*Signature=(\S*)', authorization_header).group(1)
+        access_key = re.match(r'.*Credential=(\S*?)\/.*', authorization_header).group(1)
+        return access_key, signature
+    except:
+        raise UnauthorizedError("Authorization header incorrect: missing signature or credential in header!")
 
 
 def get_request_scope(req, service):
     date = get_request_date(req)
+
+    date = date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT)
+    #date = req.headers["x-amz-date"]
     return '{}/{}/{}'.format(date, service, constants.BIONIMBUS_REQUEST)
 
 
@@ -208,7 +214,7 @@ def get_exact_request_time(req):
             continue
         try:
             date = datetime.datetime.strptime(
-                req.headers[header], '%Y%m%dT%H%M%SZ')
+                req.headers[header], constants.FULL_DATE_TIME_FORMAT)
         except DateFormatError:
             continue
         else:
@@ -433,6 +439,14 @@ def check_expired_time(req_date):
         req_date + datetime.timedelta(minutes=15)
         > datetime.datetime.utcnow())
 
+def parse_signed_headers(req):
+    try:
+        authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
+        signed_headers = re.match(r'.*SignedHeaders=(\S*?),.*', authorization_header).group(1)
+        signed_headers = signed_headers.split(";")
+        return signed_headers
+    except:
+        raise AttributeError("No authentication provided or SignedHeaders missing!")
 
 # TODO (thanh): write unit-test for:
 # - set_req_date
@@ -463,17 +477,18 @@ def sign_request(req, access_key, signing_key, service, req_date):
 # - generate_signature
 def verify(service, req, secret_key):
     access_key, signature = parse_access_key_and_signature(req)
+    signed_headers = parse_signed_headers(req)
     req_date = get_exact_request_time(req)
     if not check_expired_time(req_date):
-        raise ExpiredTimeError("Request took so long time")
+        raise ExpiredTimeError("Request expired!")
 
-    # secret_key = get_secret_key(access_key).secret_key
-    sig_string = get_sign_string_from_req(req, service)
+    sig_string = get_sign_string_from_req(req, service, include=signed_headers)
     signing_key = HMAC4SigningKey(
-        secret_key, service, req_date.strftime(constants.DATE_TIME_FORMAT))
+        secret_key, service, req_date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT))
     regenerate_signature = generate_signature(signing_key.key, sig_string)
+
     if signature != regenerate_signature:
-        raise UnauthorizedError("Invalid authenticated request")
+        raise UnauthorizedError("Server and client signatures don't match!")
     return access_key
 
 
