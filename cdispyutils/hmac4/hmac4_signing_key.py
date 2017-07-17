@@ -52,7 +52,7 @@ class HMAC4SigningKey:
                       endpoints at:
                       http://docs.aws.amazon.com/general/latest/gr/rande.html
                       e.g. elasticbeanstalk
-        date       -- Date of the form %Y%m%dT%H%M%SZ. Key is only valid for
+        date       -- Date of the form %Y%m%d. Key is only valid for
                       requests with a Date or X-Amz-Date header matching this
                       date. If date is not supplied the current date is
                       used.
@@ -80,10 +80,10 @@ class HMAC4SigningKey:
         """
 
         self.service = service
-        self.date = date or datetime.utcnow().strftime(constants.DATE_TIME_FORMAT)
+        self.date = date or datetime.utcnow().strftime(constants.ABRIDGED_DATE_TIME_FORMAT)
         self.store_secret_key = store_secret_key
         self.secret_key = secret_key if self.store_secret_key else None
-        self.key = self.generate_key(secret_key,
+        self.key = self.generate_key(self.secret_key,
                                      self.service, self.date)
 
     @classmethod

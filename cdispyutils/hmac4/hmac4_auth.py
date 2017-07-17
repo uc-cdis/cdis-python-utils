@@ -1,5 +1,7 @@
 from requests.auth import AuthBase
 from .hmac4_auth_utils import sign_request
+import cdispyutils.constants as constants
+import datetime
 
 
 class HMAC4Auth(AuthBase):
@@ -62,5 +64,6 @@ class HMAC4Auth(AuthBase):
         super(HMAC4Auth, self).__init__()
 
     def __call__(self, req):
-        req = sign_request(req, self.access_key, self.signing_key, self.service, self.date)
+        req = sign_request(req, self.access_key, self.signing_key, self.service, datetime.datetime.utcnow().strftime(constants.FULL_DATE_TIME_FORMAT))
+        
         return req
