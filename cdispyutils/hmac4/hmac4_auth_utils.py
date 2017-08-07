@@ -267,7 +267,7 @@ def get_canonical_request(req, cano_headers, signed_headers):
     url = urlparse(req.url)
     path = format_cano_path(url.path)
     if 'Subdir' in req.headers:
-        path = "/" + req.headers['Subdir'] + path
+        path = req.headers['Subdir'] + path
     # AWS handles "extreme" querystrings differently to urlparse
     # (see post-vanilla-query-nonunreserved test in aws_testsuite)
     split = req.url.split('?', 1)
