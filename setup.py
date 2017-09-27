@@ -7,7 +7,7 @@ setup(
     description="General utilities",
     license="Apache",
     install_requires=[
-        "six==1.10.0",
+        "six==1.11.0",
         "requests==2.13.0",
     ],
     packages=find_packages(),
