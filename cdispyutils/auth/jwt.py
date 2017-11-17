@@ -89,10 +89,6 @@ def get_public_key_for_kid(kid):
         JWTValidationError:
             if the key id is provided and public key with that key id is found
     """
-    # If key id is provided in the token headers, look it up in the list of
-    # public keys currently held by the Flask app, refreshing the list if
-    # necessary, and insist that a key exist with the given id. Otherwise, the
-    # token must validate using the first public key in the list.
     need_refresh = (
         not hasattr(flask.current_app, 'public_keys')
         or (kid and kid not in flask.current_app.public_keys)
