@@ -65,6 +65,15 @@ def get_public_key_for_kid(kid):
     this key id. The key id is allowed to be None, in which case, use the the
     first key in the OrderedDict.
 
+    - If current flask app is not holding public keys (ordered dictionary) or
+      key id is in token headers and the key id does not appear in those public
+      keys, refresh the public keys by calling ``refresh_public_keys()``
+    - If key id is provided in the token headers:
+      - If key id does not appear in public keys, fail
+      - Use public key with this key id
+    - If key id is not provided:
+      - Use first public key in the ordered dictionary
+
     Args:
         kid (Optional[str]): the key id; default to the first public key
 
@@ -109,15 +118,6 @@ def validate_request_jwt(request=None, aud=None):
     ``validate_jwt``, which actually handles the verification; this function
     just wraps with the request handling and public key retrieval from the
     flask app.
-
-    - If current flask app is not holding public keys (ordered dictionary) or
-      key id is in token headers and the key id does not appear in those public
-      keys, refresh the public keys by calling ``refresh_public_keys()``
-    - If key id is provided in the token headers:
-      - If key id does not appear in public keys, fail
-      - Use public key with this key id
-    - If key id is not provided:
-      - Use first public key in the ordered dictionary
 
     Args:
         request (Optional[flask.Request]):
