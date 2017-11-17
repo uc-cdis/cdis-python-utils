@@ -8,7 +8,7 @@ import requests
 from .errors import JWTValidationError
 
 
-def refresh_public_keys(user_api=None):
+def refresh_jwt_public_keys(user_api=None):
     """
     Update the public keys that the Flask app is currently using to validate
     JWTs.
@@ -20,18 +20,18 @@ def refresh_public_keys(user_api=None):
     {
         "keys": [
             [
-                "default",
+                "key-id-01",
                 "-----BEGIN PUBLIC KEY---- ... -----END PUBLIC KEY-----\n"
             ],
             [
-                "key-id-for-some-other-key",
+                "key-id-02",
                 "-----BEGIN PUBLIC KEY---- ... -----END PUBLIC KEY-----\n"
             ]
         ]
     }
 
     Take out the array of keys, put it in an ordered dictionary, and assign
-    that to ``flask.current_app.public_keys``.
+    that to ``flask.current_app.jwt_public_keys``.
 
     Args:
         user_api (Optional[str]):
@@ -42,8 +42,8 @@ def refresh_public_keys(user_api=None):
         None
 
     Side Effects:
-        - Reassign ``flask.current_app.public_keys`` to the keys obtained from
-          ``get_public_keys``, as an OrderedDict.
+        - Reassign ``flask.current_app.jwt_public_keys`` to the keys obtained
+          from ``get_jwt_public_keys``, as an OrderedDict.
 
     Raises:
         ValueError: if user_api is not provided or set in app config
@@ -51,12 +51,12 @@ def refresh_public_keys(user_api=None):
     user_api = user_api or flask.current_app.config.get('USER_API')
     if not user_api:
         raise ValueError('no URL provided for user API')
-    public_keys = requests.get(user_api + 'keys').json()['keys']
+    jwt_public_keys = requests.get(user_api + 'keys').json()['keys']
     flask.current_app.logger.info(
         'refreshing public keys; updated to:\n'
-        + json.dumps(public_keys, indent=4)
+        + json.dumps(jwt_public_keys, indent=4)
     )
-    flask.current_app.public_keys = OrderedDict(public_keys)
+    flask.current_app.jwt_public_keys = OrderedDict(jwt_public_keys)
 
 
 def get_public_key_for_kid(kid):
@@ -67,7 +67,7 @@ def get_public_key_for_kid(kid):
 
     - If current flask app is not holding public keys (ordered dictionary) or
       key id is in token headers and the key id does not appear in those public
-      keys, refresh the public keys by calling ``refresh_public_keys()``
+      keys, refresh the public keys by calling ``refresh_jwt_public_keys()``
     - If key id is provided in the token headers:
       - If key id does not appear in public keys, fail
       - Use public key with this key id
@@ -81,29 +81,29 @@ def get_public_key_for_kid(kid):
         str: the public key
 
     Side Effects:
-        - From ``refresh_public_keys``: reassign
-          ``flask.current_app.public_keys`` to the keys obtained from
-          ``get_public_keys``.
+        - From ``refresh_jwt_public_keys``: reassign
+          ``flask.current_app.jwt_public_keys`` to the keys obtained from
+          ``get_jwt_public_keys``.
 
     Raises:
         JWTValidationError:
             if the key id is provided and public key with that key id is found
     """
     need_refresh = (
-        not hasattr(flask.current_app, 'public_keys')
-        or (kid and kid not in flask.current_app.public_keys)
+        not hasattr(flask.current_app, 'jwt_public_keys')
+        or (kid and kid not in flask.current_app.jwt_public_keys)
     )
     if need_refresh:
-        # refresh_public_keys assigns to flask.current_app.public_keys
-        refresh_public_keys()
+        # refresh_jwt_public_keys assigns to flask.current_app.jwt_public_keys
+        refresh_jwt_public_keys()
     if kid:
         try:
-            return flask.current_app.public_keys['kid']
+            return flask.current_app.jwt_public_keys['kid']
         except KeyError:
             raise JWTValidationError('no key exists with this key id')
     else:
         # Grab the key from the first in the list of keys.
-        return flask.current_app.public_keys.items()[0][1]
+        return flask.current_app.jwt_public_keys.items()[0][1]
 
 
 def validate_request_jwt(request=None, aud=None):
