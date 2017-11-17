@@ -42,7 +42,7 @@ def refresh_public_keys():
     flask.current_app.public_keys = OrderedDict(get_public_keys())
 
 
-def validate_jwt(request, aud=None):
+def validate_jwt(request=None, aud=None):
     """
     Verify the JWT authorization header from a Flask request.
 
@@ -60,6 +60,7 @@ def validate_jwt(request, aud=None):
     Raises:
         JWTValidationError: if any step of the validation fails
     """
+    request = request or flask.request
     aud = set(aud) or set()
     encoded_token = request.headers['Authorization'].split(' ')[1]
     token_headers = jwt.get_unverified_header(encoded_token)
