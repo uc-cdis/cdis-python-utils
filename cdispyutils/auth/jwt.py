@@ -24,7 +24,7 @@ def get_public_keys(user_api=None):
     user_api = user_api or flask.current_app.config.get('USER_API')
     if not user_api:
         raise ValueError('no URL provided for user API')
-    return requests.get(user_api + 'keys').json()
+    return requests.get(user_api + 'keys').json()['keys']
 
 
 def refresh_public_keys():
