@@ -1,0 +1,2 @@
+class JWTValidationError(Exception):
+    pass
