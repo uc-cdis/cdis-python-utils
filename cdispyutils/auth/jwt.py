@@ -51,7 +51,8 @@ def refresh_jwt_public_keys(user_api=None):
     user_api = user_api or flask.current_app.config.get('USER_API')
     if not user_api:
         raise ValueError('no URL provided for user API')
-    jwt_public_keys = requests.get(user_api + 'keys').json()['keys']
+    path = requests.compat.urljoin(user_api, 'keys')
+    jwt_public_keys = requests.get(path).json()['keys']
     flask.current_app.logger.info(
         'refreshing public keys; updated to:\n'
         + json.dumps(jwt_public_keys, indent=4)
