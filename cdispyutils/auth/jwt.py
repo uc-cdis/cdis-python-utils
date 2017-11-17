@@ -99,7 +99,7 @@ def get_public_key_for_kid(kid):
         refresh_jwt_public_keys()
     if kid:
         try:
-            return flask.current_app.jwt_public_keys['kid']
+            return flask.current_app.jwt_public_keys[kid]
         except KeyError:
             raise JWTValidationError('no key exists with this key id')
     else:
