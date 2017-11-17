@@ -70,7 +70,11 @@ def validate_jwt(request=None, aud=None):
     # necessary, and insist that a key exist with the given id. Otherwise, the
     # token must validate using the first public key in the list.
     if kid:
-        if kid not in flask.current_app.public_keys:
+        need_refresh = (
+            not hasattr(flask.current_app, 'public_keys')
+            or kid not in flask.current_app.public_keys
+        )
+        if need_refresh:
             refresh_public_keys()
         try:
             public_key = flask.current_app.public_keys['kid']
