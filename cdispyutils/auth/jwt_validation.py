@@ -107,7 +107,7 @@ def get_public_key_for_kid(kid):
         return flask.current_app.jwt_public_keys.items()[0][1]
 
 
-def validate_request_jwt(request=None, aud=None):
+def validate_request_jwt(aud, request=None):
     """
     Verify the JWT authorization header from a Flask request.
 
@@ -117,23 +117,28 @@ def validate_request_jwt(request=None, aud=None):
     flask app.
 
     Args:
+        aud (Iterable[str]):
+            iterable of audiences which the JWT must have, which is converted
+            to a set; must be non-empty, since tokens issued by fence will
+            contain at minimum either ``access`` or ``request`` in the
+            audiences, and the validator must identify with at least one
+            audience in the token
         request (Optional[flask.Request]):
             request containing JWT header to validate; default to
             ``flask.request``
-        aud (Optional[Iterable[str]]):
-            iterable of audiences which the JWT must have, which is converted
-            to a set; default to empty set (so audience check is NOT performed
-            by default here)
 
     Return:
         dict: the validated JWT
 
     Raises:
         JWTValidationError:
-            from ``validate_jwt``, if any step of the validation fails
+            - if no audiences are provided in the ``aud`` set
+            - from ``validate_jwt``, if any step of the validation fails
     """
+    aud = set(aud)
+    if not aud:
+        raise JWTValidationError('no audiences provided')
     request = request or flask.request
-    aud = set(aud) if aud is not None else set()
     encoded_token = request.headers['Authorization'].split(' ')[1]
     token_headers = jwt.get_unverified_header(encoded_token)
     public_key = get_public_key_for_kid(token_headers.get('kid'))
@@ -153,7 +158,7 @@ def validate_jwt(encoded_token, public_key, aud):
     Args:
         encoded_token (str): encoded JWT
         public_key (str): public key to validate the JWT signature
-        aud (set): set of audiences the JWT must satisfy
+        aud (set): non-empty set of audiences the JWT must satisfy
 
     Return:
         dict: the decoded and validated JWT
@@ -161,15 +166,28 @@ def validate_jwt(encoded_token, public_key, aud):
     Raises:
         JWTValidationError: if any step of the validation fails
     """
-    token = jwt.decode(encoded_token, key=public_key, algorithms=['RS256'])
+    # To satisfy PyJWT, since the token will contain an aud field, decode has
+    # to be passed one of the audiences to check here (so PyJWT doesn't raise
+    # an InvalidAudienceError). Per the JWT specification, if the token
+    # contains an aud field, the validator MUST identify with one of the
+    # audiences listed in that field. This implementation is more strict, and
+    # allows the validator to demand multiple audiences which must all be
+    # satisfied by the token (see below).
+    aud = set(aud)
+    random_aud = list(aud)[0]
+    token = jwt.decode(
+        encoded_token, key=public_key, algorithms=['RS256'],
+        audience=random_aud
+    )
 
-    # PyJWT validates iat and exp fields; everything else must happen here.
+    # PyJWT validates iat and exp fields (and aud...sort of); everything else
+    # must happen here.
 
-    if aud:
-        # The audiences listed in the token must completely satisfy the
-        # required audiences if they are provided.
-        missing = aud - token['aud']
-        if missing:
-            raise JWTValidationError('missing audiences: ' + str(missing))
+    # The audiences listed in the token must completely satisfy all the
+    # required audiences provided. Note that this is stricter than the
+    # specification suggested in RFC 7519.
+    missing = aud - set(token['aud'])
+    if missing:
+        raise JWTValidationError('missing audiences: ' + str(missing))
 
     return token
