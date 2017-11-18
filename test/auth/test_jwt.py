@@ -9,7 +9,15 @@ from cdispyutils import auth
 
 
 @pytest.fixture(scope='session')
-def claims():
+def default_audiences():
+    """
+    Return some default audiences to put in the claims of a JWT.
+    """
+    return ['access', 'user']
+
+
+@pytest.fixture(scope='session')
+def claims(default_audiences):
     """
     Return some generic claims to put in a JWT.
 
@@ -20,7 +28,7 @@ def claims():
     iat = int(now.strftime('%s'))
     exp = int((now + timedelta(seconds=60)).strftime('%s'))
     return {
-        'aud': ['access', 'user'],
+        'aud': default_audiences,
         'sub': '1234',
         'iss': 'https://api.test.net',
         'iat': iat,
@@ -87,21 +95,22 @@ def private_key():
         return f.read()
 
 
-def test_valid_signature(encoded_jwt, public_key):
+def test_valid_signature(encoded_jwt, public_key, default_audiences):
     """
     Do a basic test of the expected functionality with the sample payload in
     the fence README.
     """
-    assert auth.validate_jwt(encoded_jwt, public_key, {'access', 'user'})
+    assert auth.validate_jwt(encoded_jwt, public_key, default_audiences)
 
 
-def test_invalid_signature_rejected(encoded_jwt, wrong_public_key):
+def test_invalid_signature_rejected(
+        encoded_jwt, wrong_public_key, default_audiences):
     """
     Test that ``validate_jwt`` rejects JWTs signed with a private key not
     corresponding to the public key it is given.
     """
     with pytest.raises(jwt.DecodeError):
-        auth.validate_jwt(encoded_jwt, wrong_public_key, {'access'})
+        auth.validate_jwt(encoded_jwt, wrong_public_key, default_audiences)
 
 
 def test_invalid_aud_rejected(encoded_jwt, public_key):
