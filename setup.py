@@ -10,6 +10,7 @@ setup(
         "six==1.11.0",
         "requests==2.13.0",
         "PyJWT==1.5.3",
+        "cryptography==2.1.2",
     ],
     packages=find_packages(),
 )
