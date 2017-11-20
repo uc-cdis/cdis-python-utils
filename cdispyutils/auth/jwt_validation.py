@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import functools
 import json
 
 import flask
@@ -51,7 +52,7 @@ def refresh_jwt_public_keys(user_api=None):
     user_api = user_api or flask.current_app.config.get('USER_API')
     if not user_api:
         raise ValueError('no URL provided for user API')
-    path = requests.compat.urljoin(user_api, 'keys')
+    path = '/'.join(path.strip('/') for path in [user_api, 'keys'])
     jwt_public_keys = requests.get(path).json()['keys']
     flask.current_app.logger.info(
         'refreshing public keys; updated to:\n'
@@ -139,10 +140,44 @@ def validate_request_jwt(aud, request=None):
     if not aud:
         raise JWTValidationError('no audiences provided')
     request = request or flask.request
-    encoded_token = request.headers['Authorization'].split(' ')[1]
+    try:
+        encoded_token = request.headers['Authorization'].split(' ')[1]
+    except KeyError:
+        raise JWTValidationError('no authorization token provided')
     token_headers = jwt.get_unverified_header(encoded_token)
     public_key = get_public_key_for_kid(token_headers.get('kid'))
     return validate_jwt(encoded_token, public_key, aud)
+
+
+def require_jwt(aud):
+    """
+    Define a decorator for utility which calls ``validate_request_jwt`` using
+    the given audiences to require a JWT authorization header.
+
+    Args:
+        aud (Iterable[str]): audiences to require in the JWT
+
+    Return:
+        Callable[[Any], Any]: decorated function
+    """
+    def decorator(f):
+        """
+        Define the actual decorator, which takes the decorated function as an
+        argument.
+
+        Args:
+            Callable[[Any], Any]: function to decorate
+
+        Return:
+            Callable[[Any], Any]: the same type as the function
+        """
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            """Validate the JWT and call the actual function here."""
+            validate_request_jwt(aud)
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def validate_jwt(encoded_token, public_key, aud):
