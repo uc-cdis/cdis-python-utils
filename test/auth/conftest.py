@@ -2,8 +2,19 @@ from datetime import datetime, timedelta
 import os
 import uuid
 
+import flask
 import jwt
+import mock
 import pytest
+import requests
+
+from cdispyutils import auth
+
+
+USER_API = 'https://testing/user'
+KEYS_URL = 'https://testing/user/keys'
+
+TEST_RESPONSE_JSON = {'test_response': 'OK'}
 
 
 @pytest.fixture(scope='session')
@@ -42,24 +53,8 @@ def claims(default_audiences):
     }
 
 
-@pytest.fixture
-def encoded_jwt(claims, private_key):
-    """
-    Return an example JWT containing the claims and encoded with the private
-    key.
-
-    Args:
-        claims (dict): fixture
-        private_key (str): fixture
-
-    Return:
-        str: JWT containing claims encoded with private key
-    """
-    return jwt.encode(claims, key=private_key, algorithm='RS256')
-
-
 @pytest.fixture(scope='session')
-def example_keys_endpoint_response(public_key, different_public_key):
+def example_keys_response(public_key, different_public_key):
     """
     Return an example response JSON returned from the ``/keys`` endpoint in
     fence.
@@ -109,11 +104,65 @@ def private_key():
         return f.read()
 
 
-@pytest.fixture
-def patch_fence_keys_endpoint(monkeypatch):
+@pytest.fixture(scope='function')
+def app():
     """
-    Provide a function to patch the value of the JSON returned by the ``/keys``
-    endpoint in fence.
+    Set up a basic flask app for testing.
+    """
+    app = flask.Flask(__name__)
+    app.debug = True
+    app.config['USER_API'] = USER_API
+
+    @app.route('/test')
+    def test_endpoint():
+        """
+        Define a simple endpoint for testing which requires a JWT header for
+        authorization.
+        """
+        auth.validate_request_jwt({'access'})
+        return flask.jsonify(TEST_RESPONSE_JSON)
+
+    context = app.app_context()
+    context.push()
+    yield app
+    context.pop()
+
+
+@pytest.fixture(scope='session')
+def encoded_jwt(claims, private_key):
+    """
+    Return an example JWT containing the claims and encoded with the private
+    key.
+
+    Args:
+        claims (dict): fixture
+        private_key (str): fixture
+
+    Return:
+        str: JWT containing claims encoded with private key
+    """
+    return jwt.encode(claims, key=private_key, algorithm='RS256')
+
+
+@pytest.fixture(scope='session')
+def auth_header(encoded_jwt):
+    """
+    Return an authorization header containing the example JWT.
+
+    Args:
+        encoded_jwt (str): fixture
+
+    Return:
+        List[Tuple[str, str]]: the authorization header
+    """
+    return [('Authorization', 'Bearer %s' % encoded_jwt)]
+
+
+@pytest.fixture
+def mock_get(monkeypatch, example_keys_response):
+    """
+    Provide a function to patch the value of the JSON returned by
+    ``requests.get``.
 
     (NOTE that this only patches what will return from ``requests.get`` so if
     the implementation of ``refresh_jwt_public_keys`` is changed to use a
@@ -123,22 +172,31 @@ def patch_fence_keys_endpoint(monkeypatch):
         monkeypatch (pytest.monkeypatch.MonkeyPatch): fixture
 
     Return:
-        Calllable[dict, None]: function which sets the /keys reponse JSON
+        Calllable[dict, None]:
+            function which sets the reponse JSON of ``requests.get``
     """
-    def do_patch(keys_response_json):
+
+    def do_patch(urls_to_responses=None):
         """
         Args:
-            keys_response (dict): value to set /keys return value to
+            keys_response_json (dict): value to set /keys return value to
 
         Return:
             None
 
         Side Effects:
-            Patch the /keys endpoint.
+            Patch ``requests.get``
         """
+        urls_to_responses = urls_to_responses or {}
+        defaults = {KEYS_URL: example_keys_response}
+        defaults.update(urls_to_responses)
+        urls_to_responses = defaults
 
-        monkeypatch.setattr(
-            'requests.Response.json',
-            lambda: keys_response_json
-        )
+        def get(url):
+            mocked_response = mock.MagicMock(requests.Response)
+            mocked_response.json.return_value = urls_to_responses[url]
+            return mocked_response
+
+        monkeypatch.setattr('requests.get', mock.MagicMock(side_effect=get))
+
     return do_patch
