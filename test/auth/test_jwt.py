@@ -5,7 +5,10 @@ import jwt
 import pytest
 import requests
 
-from cdispyutils.auth.errors import JWTValidationError
+from cdispyutils.auth.errors import (
+    JWTValidationError,
+    JWTAudienceError,
+)
 from cdispyutils.auth.jwt_validation import (
     get_public_key_for_kid,
     require_jwt,
@@ -40,9 +43,9 @@ def test_invalid_signature_rejected(
 def test_invalid_aud_rejected(encoded_jwt, public_key):
     """
     Test that if ``validate_jwt`` is passed values for ``aud`` which do not
-    appear in the token, a ``JWTValidationError`` is raised.
+    appear in the token, a ``JWTAudienceError`` is raised.
     """
-    with pytest.raises(jwt.InvalidAudienceError):
+    with pytest.raises(JWTAudienceError):
         validate_jwt(encoded_jwt, public_key, {'not-in-aud'})
 
 
@@ -95,7 +98,7 @@ def test_validate_request_jwt_incorrect_usage(
         app, client, auth_header, mock_get):
     """
     Test that if a ``require_jwt`` caller does not give it any audiences, a
-    JWTValidationError is raised.
+    JWTAudienceError is raised.
     """
     mock_get()
 
@@ -105,7 +108,7 @@ def test_validate_request_jwt_incorrect_usage(
     def bad():
         return flask.jsonify({'foo': 'bar'})
 
-    with pytest.raises(JWTValidationError):
+    with pytest.raises(JWTAudienceError):
         client.get('/test_incorrect_usage', headers=auth_header)
 
 
@@ -123,5 +126,24 @@ def test_validate_request_jwt_missing(app, client, auth_header, mock_get):
     def bad():
         return flask.jsonify({'foo': 'bar'})
 
-    with pytest.raises(jwt.InvalidAudienceError):
+    with pytest.raises(JWTAudienceError):
+        client.get('/test_missing_audience', headers=auth_header)
+
+
+def test_validate_request_jwt_missing_some(app, client, auth_header, mock_get):
+    """
+    Test that if the JWT satisfies some audiences but is missing at least one
+    audience which is required by an endpoint, a ``jwt.InvalidAudienceError``
+    is raised.
+    """
+    mock_get()
+
+    # This should raise jwt.InvalidAudienceError, since the audience it
+    # requires does not appear in the default JWT anywhere.
+    @app.route('/test_missing_audience')
+    @require_jwt({'access', 'missing_audience'})
+    def bad():
+        return flask.jsonify({'foo': 'bar'})
+
+    with pytest.raises(JWTAudienceError):
         client.get('/test_missing_audience', headers=auth_header)

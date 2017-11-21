@@ -6,7 +6,10 @@ import flask
 import jwt
 import requests
 
-from .errors import JWTValidationError
+from .errors import (
+    JWTValidationError,
+    JWTAudienceError,
+)
 
 
 def refresh_jwt_public_keys(user_api=None):
@@ -138,7 +141,7 @@ def validate_request_jwt(aud, request=None):
     """
     aud = set(aud)
     if not aud:
-        raise JWTValidationError('no audiences provided')
+        raise JWTAudienceError('no audiences provided')
     request = request or flask.request
     try:
         encoded_token = request.headers['Authorization'].split(' ')[1]
@@ -210,10 +213,13 @@ def validate_jwt(encoded_token, public_key, aud):
     # satisfied by the token (see below).
     aud = set(aud)
     random_aud = list(aud)[0]
-    token = jwt.decode(
-        encoded_token, key=public_key, algorithms=['RS256'],
-        audience=random_aud
-    )
+    try:
+        token = jwt.decode(
+            encoded_token, key=public_key, algorithms=['RS256'],
+            audience=random_aud
+        )
+    except jwt.InvalidAudienceError as e:
+        raise JWTAudienceError(e)
 
     # PyJWT validates iat and exp fields (and aud...sort of); everything else
     # must happen here.
@@ -223,6 +229,6 @@ def validate_jwt(encoded_token, public_key, aud):
     # specification suggested in RFC 7519.
     missing = aud - set(token['aud'])
     if missing:
-        raise JWTValidationError('missing audiences: ' + str(missing))
+        raise JWTAudienceError('missing audiences: ' + str(missing))
 
     return token
