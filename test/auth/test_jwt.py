@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 from collections import OrderedDict
 
 import flask
@@ -52,7 +54,17 @@ def test_invalid_aud_rejected(encoded_jwt, public_key, iss):
         validate_jwt(encoded_jwt, public_key, {'not-in-aud'}, iss)
 
 
-def test_get_public_key(monkeypatch, app, example_keys_response, mock_get):
+def test_invalid_iss_rejected(encoded_jwt, public_key, iss):
+    """
+    Test that if ``validate_jwt`` receives a token whose value for ``iss``
+    does not match the expected value, a ``JWTValidationError`` is raised.
+    """
+    wrong_iss = iss + 'garbage'
+    with pytest.raises(JWTAudienceError):
+        validate_jwt(encoded_jwt, public_key, {'not-in-aud'}, wrong_iss)
+
+
+def test_get_public_key(app, example_keys_response, mock_get):
     """
     Test the functionality of retrieving the public keys from the keys
     endpoint.
