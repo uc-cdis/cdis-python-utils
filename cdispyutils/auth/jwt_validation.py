@@ -154,7 +154,7 @@ def validate_request_jwt(aud, request=None):
             - from ``validate_jwt``, if any step of the validation fails
     """
     aud = set(aud)
-    iss = flask.current_app['USER_API']
+    iss = flask.current_app.config['USER_API']
     if not aud:
         raise JWTAudienceError('no audiences provided')
     request = request or flask.request
