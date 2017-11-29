@@ -1,5 +1,14 @@
 """
 Define functions to perform JWT validation.
+
+The lowest level of functionality is ``validate_jwt``, which performs the
+validation on a given token, using a given public key to verify the signature,
+and also taking the ``aud`` and ``iss`` fields to check against the token.
+
+``validate_request_jwt`` wraps ``validate_jwt`` to pass in the token from the
+authorization header in a flask request, and checks to see if the public keys
+held by the current app need to be refreshed (if there are none assigned, or if
+a token is received with a key id not listed in the current keys).
 """
 
 from collections import OrderedDict
