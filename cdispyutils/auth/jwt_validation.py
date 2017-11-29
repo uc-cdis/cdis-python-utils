@@ -224,6 +224,14 @@ def validate_jwt(encoded_token, public_key, aud):
     # PyJWT validates iat and exp fields (and aud...sort of); everything else
     # must happen here.
 
+    # iss
+    # Check that the issuer of the token is the `USER_API` of the current app.
+    user_api = flask.current_app['USER_API']
+    if token['iss'] != user_api:
+        msg = 'invalid issuer {}; expected {}'.format(token['iss'], user_api)
+        raise JWTValidationError(msg)
+
+    # aud
     # The audiences listed in the token must completely satisfy all the
     # required audiences provided. Note that this is stricter than the
     # specification suggested in RFC 7519.
