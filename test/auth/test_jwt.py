@@ -20,33 +20,36 @@ from .conftest import (
 )
 
 
-def test_valid_signature(claims, encoded_jwt, public_key, default_audiences):
+def test_valid_signature(
+        claims, encoded_jwt, public_key, default_audiences, iss):
     """
     Do a basic test of the expected functionality with the sample payload in
     the fence README.
     """
-    decoded_token = validate_jwt(encoded_jwt, public_key, default_audiences)
+    decoded_token = validate_jwt(
+        encoded_jwt, public_key, default_audiences, iss
+    )
     assert decoded_token
     assert decoded_token == claims
 
 
 def test_invalid_signature_rejected(
-        encoded_jwt, different_public_key, default_audiences):
+        encoded_jwt, different_public_key, default_audiences, iss):
     """
     Test that ``validate_jwt`` rejects JWTs signed with a private key not
     corresponding to the public key it is given.
     """
     with pytest.raises(jwt.DecodeError):
-        validate_jwt(encoded_jwt, different_public_key, default_audiences)
+        validate_jwt(encoded_jwt, different_public_key, default_audiences, iss)
 
 
-def test_invalid_aud_rejected(encoded_jwt, public_key):
+def test_invalid_aud_rejected(encoded_jwt, public_key, iss):
     """
     Test that if ``validate_jwt`` is passed values for ``aud`` which do not
     appear in the token, a ``JWTAudienceError`` is raised.
     """
     with pytest.raises(JWTAudienceError):
-        validate_jwt(encoded_jwt, public_key, {'not-in-aud'})
+        validate_jwt(encoded_jwt, public_key, {'not-in-aud'}, iss)
 
 
 def test_get_public_key(monkeypatch, app, example_keys_response, mock_get):

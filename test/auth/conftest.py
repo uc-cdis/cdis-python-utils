@@ -16,10 +16,18 @@ import requests
 from cdispyutils import auth
 
 
-USER_API = 'https://testing/user'
-KEYS_URL = 'https://testing/user/keys'
+USER_API = 'https://user-api.test.net'
+KEYS_URL = 'https://user-api.test.net/keys'
 
 TEST_RESPONSE_JSON = {'test_response': 'OK'}
+
+
+@pytest.fixture(scope='session')
+def iss():
+    """
+    Return the token issuer (``USER_API``).
+    """
+    return USER_API
 
 
 @pytest.fixture(scope='session')
@@ -31,7 +39,7 @@ def default_audiences():
 
 
 @pytest.fixture(scope='session')
-def claims(default_audiences):
+def claims(default_audiences, iss):
     """
     Return some generic claims to put in a JWT.
 
@@ -44,7 +52,7 @@ def claims(default_audiences):
     return {
         'aud': default_audiences,
         'sub': '1234',
-        'iss': 'https://api.test.net',
+        'iss': iss,
         'iat': iat,
         'exp': exp,
         'jti': str(uuid.uuid4()),
