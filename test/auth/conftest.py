@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name,unused-variable
+"""
+Define pytest fixtures for testing auth utils.
+"""
+
 from datetime import datetime, timedelta
 import os
 import uuid
@@ -193,6 +198,7 @@ def mock_get(monkeypatch, example_keys_response):
         urls_to_responses = defaults
 
         def get(url):
+            """Define a mock ``get`` function to return a mocked response."""
             mocked_response = mock.MagicMock(requests.Response)
             mocked_response.json.return_value = urls_to_responses[url]
             return mocked_response
