@@ -1,3 +1,7 @@
+"""
+Define functions to perform JWT validation.
+"""
+
 from collections import OrderedDict
 import functools
 import json
@@ -135,11 +139,13 @@ def validate_request_jwt(aud, request=None):
         dict: the validated JWT
 
     Raises:
+        KeyError: if the flask app is not configured with a ``'USER_API'``
         JWTValidationError:
             - if no audiences are provided in the ``aud`` set
             - from ``validate_jwt``, if any step of the validation fails
     """
     aud = set(aud)
+    iss = flask.current_app['USER_API']
     if not aud:
         raise JWTAudienceError('no audiences provided')
     request = request or flask.request
@@ -149,7 +155,7 @@ def validate_request_jwt(aud, request=None):
         raise JWTValidationError('no authorization token provided')
     token_headers = jwt.get_unverified_header(encoded_token)
     public_key = get_public_key_for_kid(token_headers.get('kid'))
-    return validate_jwt(encoded_token, public_key, aud)
+    return validate_jwt(encoded_token, public_key, aud, iss)
 
 
 def require_jwt(aud):
@@ -183,7 +189,7 @@ def require_jwt(aud):
     return decorator
 
 
-def validate_jwt(encoded_token, public_key, aud):
+def validate_jwt(encoded_token, public_key, aud, iss):
     """
     Validate the encoded JWT ``encoded_token``, which must satisfy the
     audiences ``aud``.
@@ -226,9 +232,8 @@ def validate_jwt(encoded_token, public_key, aud):
 
     # iss
     # Check that the issuer of the token is the `USER_API` of the current app.
-    user_api = flask.current_app['USER_API']
-    if token['iss'] != user_api:
-        msg = 'invalid issuer {}; expected {}'.format(token['iss'], user_api)
+    if token['iss'] != iss:
+        msg = 'invalid issuer {}; expected {}'.format(token['iss'], iss)
         raise JWTValidationError(msg)
 
     # aud
