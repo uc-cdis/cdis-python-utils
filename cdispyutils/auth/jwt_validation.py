@@ -30,7 +30,7 @@ def refresh_jwt_public_keys(user_api=None):
     Update the public keys that the Flask app is currently using to validate
     JWTs.
 
-    Response from ``/keys`` should look like this:
+    Response from ``/jwt/keys`` should look like this:
 
     .. code-block:: javascript
 
@@ -68,7 +68,7 @@ def refresh_jwt_public_keys(user_api=None):
     user_api = user_api or flask.current_app.config.get('USER_API')
     if not user_api:
         raise ValueError('no URL provided for user API')
-    path = '/'.join(path.strip('/') for path in [user_api, 'keys'])
+    path = '/'.join(path.strip('/') for path in [user_api, 'jwt', 'keys'])
     jwt_public_keys = requests.get(path).json()['keys']
     flask.current_app.logger.info(
         'refreshing public keys; updated to:\n'

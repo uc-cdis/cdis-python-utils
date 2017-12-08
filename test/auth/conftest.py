@@ -17,7 +17,7 @@ from cdispyutils import auth
 
 
 USER_API = 'https://user-api.test.net'
-KEYS_URL = 'https://user-api.test.net/keys'
+KEYS_URL = 'https://user-api.test.net/jwt/keys'
 
 TEST_RESPONSE_JSON = {'test_response': 'OK'}
 
@@ -69,7 +69,7 @@ def claims(default_audiences, iss):
 @pytest.fixture(scope='session')
 def example_keys_response(public_key, different_public_key):
     """
-    Return an example response JSON returned from the ``/keys`` endpoint in
+    Return an example response JSON returned from the ``/jwt/keys`` endpoint in
     fence.
 
     Args:
@@ -192,7 +192,7 @@ def mock_get(monkeypatch, example_keys_response):
     def do_patch(urls_to_responses=None):
         """
         Args:
-            keys_response_json (dict): value to set /keys return value to
+            keys_response_json (dict): value to set /jwt/keys return value to
 
         Return:
             None
