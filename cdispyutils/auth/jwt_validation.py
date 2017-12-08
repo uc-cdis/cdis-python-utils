@@ -30,7 +30,7 @@ def refresh_jwt_public_keys(user_api=None):
     Update the public keys that the Flask app is currently using to validate
     JWTs.
 
-    Response from ``/keys`` should look like this:
+    Response from ``/jwt/keys`` should look like this:
 
     .. code-block:: javascript
 
@@ -68,7 +68,7 @@ def refresh_jwt_public_keys(user_api=None):
     user_api = user_api or flask.current_app.config.get('USER_API')
     if not user_api:
         raise ValueError('no URL provided for user API')
-    path = '/'.join(path.strip('/') for path in [user_api, 'keys'])
+    path = '/'.join(path.strip('/') for path in [user_api, 'jwt', 'keys'])
     jwt_public_keys = requests.get(path).json()['keys']
     flask.current_app.logger.info(
         'refreshing public keys; updated to:\n'
@@ -77,7 +77,7 @@ def refresh_jwt_public_keys(user_api=None):
     flask.current_app.jwt_public_keys = OrderedDict(jwt_public_keys)
 
 
-def get_public_key_for_kid(kid):
+def get_public_key_for_kid(kid, attempt_refresh=True):
     """
     Given a key id ``kid``, get the public key from the flask app belonging to
     this key id. The key id is allowed to be None, in which case, use the the
@@ -93,7 +93,12 @@ def get_public_key_for_kid(kid):
       - Use first public key in the ordered dictionary
 
     Args:
-        kid (Optional[str]): the key id; default to the first public key
+        kid (str): the key id
+        attempt_refresh (bool):
+            whether to try to refresh the public keys of the flask app if
+            encountering a key id that does not exist in those keys; for fence
+            itself this should be ``False``, and for other services it should
+            be ``True``
 
     Return:
         str: the public key
@@ -111,8 +116,7 @@ def get_public_key_for_kid(kid):
         not hasattr(flask.current_app, 'jwt_public_keys')
         or (kid and kid not in flask.current_app.jwt_public_keys)
     )
-    if need_refresh:
-        # refresh_jwt_public_keys assigns to flask.current_app.jwt_public_keys
+    if need_refresh and attempt_refresh:
         refresh_jwt_public_keys()
     if kid:
         try:
@@ -124,7 +128,8 @@ def get_public_key_for_kid(kid):
         return flask.current_app.jwt_public_keys.items()[0][1]
 
 
-def validate_request_jwt(aud, request=None):
+def validate_request_jwt(
+        aud, request=None, user_api=None, attempt_refresh=True):
     """
     Verify the JWT authorization header from a Flask request.
 
@@ -143,6 +148,14 @@ def validate_request_jwt(aud, request=None):
         request (Optional[flask.Request]):
             request containing JWT header to validate; default to
             ``flask.request``
+        user_api (Optional[str]):
+            the URL for the user API (fence); default to
+            ``flask.current_app.config['USER_API']``
+        attempt_refresh (bool):
+            whether to try to refresh the public keys of the flask app if
+            encountering a key id that does not exist in those keys; for fence
+            itself this should be ``False``, and for other services it should
+            be ``True``
 
     Return:
         dict: the validated JWT
@@ -154,7 +167,7 @@ def validate_request_jwt(aud, request=None):
             - from ``validate_jwt``, if any step of the validation fails
     """
     aud = set(aud)
-    iss = flask.current_app.config['USER_API']
+    iss = user_api or flask.current_app.config['USER_API']
     if not aud:
         raise JWTAudienceError('no audiences provided')
     request = request or flask.request
@@ -163,7 +176,9 @@ def validate_request_jwt(aud, request=None):
     except KeyError:
         raise JWTValidationError('no authorization token provided')
     token_headers = jwt.get_unverified_header(encoded_token)
-    public_key = get_public_key_for_kid(token_headers.get('kid'))
+    public_key = get_public_key_for_kid(
+        token_headers.get('kid'), attempt_refresh=attempt_refresh
+    )
     return validate_jwt(encoded_token, public_key, aud, iss)
 
 
