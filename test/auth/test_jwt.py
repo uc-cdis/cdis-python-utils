@@ -109,6 +109,13 @@ def test_validate_request_no_jwt_fails(client, mock_get):
         client.get('/test')
 
 
+def test_validate_request_jwt_bad_header(client, mock_get, encoded_jwt):
+    mock_get()
+    incorrect_headers = {'Authorization': encoded_jwt}
+    with pytest.raises(JWTValidationError):
+        client.get('/test', headers=incorrect_headers)
+
+
 def test_validate_request_jwt_incorrect_usage(
         app, client, auth_header, mock_get):
     """
