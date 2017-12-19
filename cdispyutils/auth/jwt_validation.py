@@ -173,6 +173,8 @@ def validate_request_jwt(
     request = request or flask.request
     try:
         encoded_token = request.headers['Authorization'].split(' ')[1]
+    except IndexError:
+        raise JWTValidationError('could not parse authorization header')
     except KeyError:
         raise JWTValidationError('no authorization token provided')
     token_headers = jwt.get_unverified_header(encoded_token)
