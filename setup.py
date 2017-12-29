@@ -6,10 +6,10 @@ setup(
     description="General utilities",
     license="Apache",
     install_requires=[
-        "six==1.11.0",
-        "requests==2.13.0",
-        "PyJWT==1.5.3",
         "cryptography==2.1.2",
+        "PyJWT==1.5.3",
+        "requests==2.18.0",
+        "six==1.11.0",
     ],
     packages=find_packages(),
 )
