@@ -166,6 +166,8 @@ def validate_request_jwt(
             - if no audiences are provided in the ``aud`` set
             - from ``validate_jwt``, if any step of the validation fails
     """
+
+
     aud = set(aud)
     iss = user_api or flask.current_app.config['USER_API']
     if not aud:
@@ -177,11 +179,18 @@ def validate_request_jwt(
         raise JWTValidationError('could not parse authorization header')
     except KeyError:
         raise JWTValidationError('no authorization token provided')
-    token_headers = jwt.get_unverified_header(encoded_token)
+
+    try:
+        token_headers = jwt.get_unverified_header(encoded_token)
+    except jwt.DecodeError as e:
+        raise JWTValidationError('invalid user token')
+
     public_key = get_public_key_for_kid(
         token_headers.get('kid'), attempt_refresh=attempt_refresh
     )
+
     return validate_jwt(encoded_token, public_key, aud, iss)
+
 
 
 def require_jwt(aud):
@@ -252,6 +261,8 @@ def validate_jwt(encoded_token, public_key, aud, iss):
         )
     except jwt.InvalidAudienceError as e:
         raise JWTAudienceError(e)
+    except jwt.DecodeError:
+        raise JWTValidationError('invalid user token')
 
     # PyJWT validates iat and exp fields (and aud...sort of); everything else
     # must happen here.
