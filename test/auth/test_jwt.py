@@ -50,7 +50,7 @@ def test_invalid_aud_rejected(encoded_jwt, public_key, iss):
     Test that if ``validate_jwt`` is passed values for ``aud`` which do not
     appear in the token, a ``JWTAudienceError`` is raised.
     """
-    with pytest.raises(JWTAudienceError):
+    with pytest.raises(JWTValidationError):
         validate_jwt(encoded_jwt, public_key, {'not-in-aud'}, iss)
 
 
@@ -60,7 +60,7 @@ def test_invalid_iss_rejected(encoded_jwt, public_key, iss):
     does not match the expected value, a ``JWTValidationError`` is raised.
     """
     wrong_iss = iss + 'garbage'
-    with pytest.raises(JWTAudienceError):
+    with pytest.raises(JWTValidationError):
         validate_jwt(encoded_jwt, public_key, {'not-in-aud'}, wrong_iss)
 
 
@@ -137,7 +137,7 @@ def test_validate_request_jwt_incorrect_usage(
 def test_validate_request_jwt_missing(app, client, auth_header, mock_get):
     """
     Test that if the JWT is completely missing an audience which is required by
-    an endpoint, a ``jwt.InvalidAudienceError`` is raised.
+    an endpoint, a ``jwt.JWTValidationError`` is raised.
     """
     mock_get()
 
@@ -148,7 +148,7 @@ def test_validate_request_jwt_missing(app, client, auth_header, mock_get):
     def bad():
         return flask.jsonify({'foo': 'bar'})
 
-    with pytest.raises(JWTAudienceError):
+    with pytest.raises(JWTValidationError):
         client.get('/test_missing_audience', headers=auth_header)
 
 
@@ -167,5 +167,5 @@ def test_validate_request_jwt_missing_some(app, client, auth_header, mock_get):
     def bad():
         return flask.jsonify({'foo': 'bar'})
 
-    with pytest.raises(JWTAudienceError):
+    with pytest.raises(JWTValidationError):
         client.get('/test_missing_audience', headers=auth_header)

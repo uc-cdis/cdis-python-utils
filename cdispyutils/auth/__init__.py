@@ -1,4 +1,4 @@
-from .errors import JWTValidationError, JWTAudienceError
+from .errors import JWTValidationError
 from .jwt_validation import (
     get_public_key_for_kid,
     validate_jwt,
