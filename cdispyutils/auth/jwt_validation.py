@@ -259,10 +259,8 @@ def validate_jwt(encoded_token, public_key, aud, iss):
             encoded_token, key=public_key, algorithms=['RS256'],
             audience=random_aud
         )
-    except jwt.InvalidAudienceError as e:
-        raise JWTAudienceError(e)
-    except jwt.DecodeError:
-        raise JWTValidationError('invalid user token')
+    except jwt.InvalidTokenError as e:
+        raise JWTValidationError(e)
 
     # PyJWT validates iat and exp fields (and aud...sort of); everything else
     # must happen here.
