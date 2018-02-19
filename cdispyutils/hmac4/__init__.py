@@ -64,9 +64,8 @@ def verify_hmac(request, service, get_secret_key):
 
 
 def generate_aws_presigned_url(url, method, access_key, secret_key,
-                               service, region, expires, additional_signed_qs,
-                               date=None):
-    request_date = date or datetime.datetime.utcnow()
+                               service, region, expires, additional_signed_qs):
+    request_date = datetime.datetime.utcnow()
     sig_key = HMAC4SigningKey(secret_key, service, region=region,
                               date=request_date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT),
                               prefix='AWS4', postfix='aws4_request')

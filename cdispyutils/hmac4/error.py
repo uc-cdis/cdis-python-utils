@@ -18,4 +18,4 @@ class UnauthorizedError(HMAC4Error):
 class ExpiredTimeError(HMAC4Error):
     def __init__(self, message='', json=None):
         super(ExpiredTimeError, self).__init__(message, json)
-        self.code = 500
+        self.code = 401

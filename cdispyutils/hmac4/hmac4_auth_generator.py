@@ -5,7 +5,7 @@ import hmac
 from six import text_type
 
 try:
-    from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
+    from urllib.parse import urlparse, parse_qs, unquote, quote_plus
 except ImportError:
     from urlparse import urlparse, parse_qs
     from urllib import quote, unquote, quote_plus
@@ -85,7 +85,7 @@ def sign_request(req, access_key, signing_key, service, req_date):
     sig_string = hmac4_parser.get_sign_string_from_req(req, service)
     signature = generate_signature(signing_key.key, sig_string)
 
-    cano_headers, signed_headers = hmac4_parser.get_canonical_headers(req)
+    _, signed_headers = hmac4_parser.get_canonical_headers(req)
     req.headers[constants.AUTHORIZATION_HEADER] = (
         create_authentication_headers(access_key, scope, signed_headers, signature)
     )
@@ -124,7 +124,5 @@ def generate_presigned_url(url, method, access_key, signing_key, request_date, e
         [constants.AWS_ALGORITHM, request_date,
          credential_scope, hashlib.sha256(canonical_request).hexdigest()]
     )
-    print(string_to_sign)
     signature = generate_signature(signing_key.key, string_to_sign)
-    print(signature)
     return url + '?' + canonical_qs + '&' + constants.AWS_SIGNATURE_KEY + '=' + signature

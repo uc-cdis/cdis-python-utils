@@ -6,8 +6,8 @@ Define pytest fixtures for testing auth utils.
 from datetime import datetime, timedelta
 import os
 import uuid
-
 import flask
+import jwt
 import mock
 import pytest
 import requests
