@@ -24,9 +24,14 @@ Basic usage on client side to sign the request
 
 """
 
+import datetime
+import cdispyutils.constants as constants
+
 from .hmac4_signing_key import HMAC4SigningKey
 from .hmac4_auth import HMAC4Auth
-from .hmac4_auth_utils import parse_access_key_and_signature, verify
+from .hmac4_auth_parser import parse_access_key_and_signature
+from .hmac4_auth_validator import verify
+from .hmac4_auth_generator import generate_presigned_url
 
 
 def get_auth(access_key, secret_key, service):
@@ -56,3 +61,15 @@ def verify_hmac(request, service, get_secret_key):
     access_key, signature = parse_access_key_and_signature(request)
     secret_key = get_secret_key(access_key)
     return verify(service, request, secret_key)
+
+
+def generate_aws_presigned_url(url, method, access_key, secret_key,
+                               service, region, expires, additional_signed_qs,
+                               date=None):
+    request_date = date or datetime.datetime.utcnow()
+    sig_key = HMAC4SigningKey(secret_key, service, region=region,
+                              date=request_date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT),
+                              prefix='AWS4', postfix='aws4_request')
+    return generate_presigned_url(url, method, access_key, sig_key,
+                                  request_date.strftime(constants.FULL_DATE_TIME_FORMAT),
+                                  expires, additional_signed_qs)

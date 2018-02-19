@@ -41,8 +41,8 @@ class HMAC4SigningKey:
 
     """
 
-    def __init__(self, secret_key, service, date=None,
-                 store_secret_key=True):
+    def __init__(self, secret_key, service, prefix=None, postfix=None,
+                 region=None, date=None, store_secret_key=True):
         """
         >>> HMAC4SigningKey(secret_key, service[, date]
         ...                [, store_secret_key])
@@ -80,15 +80,18 @@ class HMAC4SigningKey:
         """
 
         self.service = service
-        self.date = date or datetime.utcnow().strftime(constants.ABRIDGED_DATE_TIME_FORMAT)
+        self.region = region
+        self.prefix = prefix or "HMAC4"
+        self.postfix = postfix or 'hmac4_request'
+        self.short_date_stamp = date or datetime.utcnow().strftime(constants.ABRIDGED_DATE_TIME_FORMAT)
         self.store_secret_key = store_secret_key
         self.secret_key = secret_key if self.store_secret_key else None
-        self.key = self.generate_key(self.secret_key,
-                                     self.service, self.date)
+        self.key = self.generate_key(self.prefix, self.postfix,
+                                     self.secret_key, self.service,
+                                     self.short_date_stamp, self.region)
 
     @classmethod
-    def generate_key(cls, secret_key, service, date,
-                     intermediates=False):
+    def generate_key(cls, prefix, postfix, secret_key, service, date, region=None):
         """
         Generate the signing key string as bytes.
 
@@ -101,14 +104,12 @@ class HMAC4SigningKey:
         Amazon.
 
         """
-        init_key = ('HMAC4' + secret_key).encode('utf-8')
+        init_key = ("HMAC4" + secret_key).encode('utf-8')
         date_key = cls.sign_sha256(init_key, date)
-        service_key = cls.sign_sha256(date_key, service)
-        key = cls.sign_sha256(service_key, 'hmac4_request')
-        if intermediates:
-            return (key, date_key, service_key)
-        else:
-            return key
+        region_key = date_key if region is None else cls.sign_sha256(date_key, region)
+        service_key = cls.sign_sha256(region_key, service)
+        key = cls.sign_sha256(service_key, "hmac4_request")
+        return key
 
     @staticmethod
     def sign_sha256(key, msg):
@@ -127,6 +128,6 @@ class HMAC4SigningKey:
     @property
     def amz_date(self):
         msg = ("This attribute has been renamed to 'date'. 'amz_date' is "
-             "deprecated and will be removed in a future version.")
+               "deprecated and will be removed in a future version.")
         warn(msg, DeprecationWarning)
-        return self.date
+        return self.short_date_stamp

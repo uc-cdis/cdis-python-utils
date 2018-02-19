@@ -1,5 +1,5 @@
 from requests.auth import AuthBase
-from .hmac4_auth_utils import sign_request
+from .hmac4_auth_generator import sign_request
 import cdispyutils.constants as constants
 import datetime
 
@@ -54,7 +54,7 @@ class HMAC4Auth(AuthBase):
         self.access_key = access_key
         self.signing_key = signing_key
         self.service = self.signing_key.service
-        self.date = self.signing_key.date
+        # self.date = self.signing_key.short_date_stamp
 
         if raise_invalid_date in [True, False]:
             self.raise_invalid_date = raise_invalid_date
@@ -64,6 +64,7 @@ class HMAC4Auth(AuthBase):
         super(HMAC4Auth, self).__init__()
 
     def __call__(self, req):
-        req = sign_request(req, self.access_key, self.signing_key, self.service, datetime.datetime.utcnow().strftime(constants.FULL_DATE_TIME_FORMAT))
+        req = sign_request(req, self.access_key, self.signing_key, self.service,
+                           datetime.datetime.utcnow().strftime(constants.FULL_DATE_TIME_FORMAT))
         
         return req

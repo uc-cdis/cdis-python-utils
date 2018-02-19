@@ -8,7 +8,6 @@ import os
 import uuid
 
 import flask
-import jwt
 import mock
 import pytest
 import requests
