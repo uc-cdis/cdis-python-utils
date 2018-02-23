@@ -3,9 +3,15 @@
 
 from __future__ import unicode_literals, print_function
 
+import datetime
 import sys
 import re
 import hashlib
+from cdispyutils.hmac4.hmac4_auth import HMAC4Auth
+from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
+from cdispyutils.hmac4.hmac4_auth_generator import encode_body
+from cdispyutils.hmac4 import generate_aws_presigned_url
+from six import PY2
 
 try:
     from urllib.parse import urlparse
@@ -13,16 +19,14 @@ except ImportError:
     from urlparse import urlparse
 
 import requests
+from test.mock_datetime import mock_datetime
 
 sys.path = ['../../'] + sys.path
-from cdispyutils.hmac4.hmac4_auth import HMAC4Auth
-from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
-from cdispyutils.hmac4.hmac4_auth_utils import encode_body
-from six import PY2, u
 
 
 live_access_id = ''
 live_secret_key = ''
+
 
 def request_from_text(text):
     """
@@ -56,6 +60,7 @@ def request_from_text(text):
     req = requests.Request(method, url, headers=headers, data=body)
     return req.prepare()
 
+
 def test_generate_key():
     """
     Using example data from:
@@ -65,12 +70,12 @@ def test_generate_key():
     secret_key = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
     service = 'iam'
     date = '20110909'
-    expected = [152, 241, 216, 137, 254, 196, 244, 66, 26, 220, 82, 43,
-                171, 12, 225, 248, 46, 105, 41, 194, 98, 237, 21, 229,
-                169, 76, 144, 239, 209, 227, 176, 231]
-    key = HMAC4SigningKey.generate_key(secret_key, service, date)
+    expected = [126, 29, 51, 43, 101, 84, 91, 59, 118, 34, 189, 25, 41,
+                242, 96, 23, 9, 231, 255, 84, 13, 165, 167, 25, 185, 1,
+                248, 88, 150, 13, 239, 216]
+    key = HMAC4SigningKey.generate_key("HMAC4", "hmac4_request", secret_key, service, date)
     key = [ord(x) for x in key] if PY2 else list(key)
-    assert key, expected
+    assert key == expected
 
 
 def test_instantiation_generate_key():
@@ -82,12 +87,14 @@ def test_instantiation_generate_key():
     secret_key = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
     service = 'iam'
     date = '20110909'
-    expected = [152, 241, 216, 137, 254, 196, 244, 66, 26, 220, 82, 43,
-                171, 12, 225, 248, 46, 105, 41, 194, 98, 237, 21, 229,
-                169, 76, 144, 239, 209, 227, 176, 231]
-    key = HMAC4SigningKey(secret_key, service, date).key
-    key = [ord(x) for x in key] if PY2 else list(key)
-    assert key, expected
+    expected = [126, 29, 51, 43, 101, 84, 91, 59, 118, 34, 189, 25, 41,
+                242, 96, 23, 9, 231, 255, 84, 13, 165, 167, 25, 185, 1,
+                248, 88, 150, 13, 239, 216]
+    sig_key = HMAC4SigningKey(secret_key, service, prefix="HMAC4",
+                              postfix="hmac4_request", date=date)
+    key = [ord(x) for x in sig_key.key] if PY2 else list(sig_key.key)
+    assert key == expected
+
 
 def test_generate_signature():
     """
@@ -98,7 +105,8 @@ def test_generate_signature():
     secret_key = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
     service = 'iam'
     date = '20110909'
-    key = HMAC4SigningKey(secret_key, service, date)
+    key = HMAC4SigningKey(secret_key, service, prefix="HMAC4",
+                          postfix="hmac4_request", date=date)
     req_text = [
         'POST https://iam.amazonaws.com/ HTTP/1.1',
         'Host: iam.amazonaws.com',
@@ -109,13 +117,35 @@ def test_generate_signature():
     req_text = '\n'.join(req_text) + '\n'
     req = request_from_text(req_text)
     del req.headers['content-length']
-    include_hdrs = list(req.headers)
+
+    target_date = datetime.datetime(2018, 02, 16)
     auth = HMAC4Auth('dummy', key)
     encode_body(req)
     hsh = hashlib.sha256(req.body)
     req.headers['x-amz-content-sha256'] = hsh.hexdigest()
-    sreq = auth(req)
+    with mock_datetime(target_date, datetime):
+        sreq = auth(req)
     signature = sreq.headers['Authorization'].split('=')[3]
-    expected = ('ced6826de92d2bdeed8f846f0bf508e8559e98e4b0199114b84c541'
-                '74deb456c')
-    assert signature, expected
+    expected = ('e2ed5dd809cff929abf86c687abedd3af09fc266da6c4ec485bda6aa'
+                '111a5d04')
+    assert signature == expected
+
+
+def test_generate_presigned_url():
+    access_key = 'AKIDEXAMPLE'
+    secret_key = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
+    url = 'https://s3.amazonaws.com/dummy/P0001_T1/test.tar.gz'
+    date = datetime.date(2018, 02, 19)
+    with mock_datetime(date, datetime):
+        presigned_url = generate_aws_presigned_url(url, 'GET', access_key, secret_key,
+                                                   's3', 'us-east-1', 86400,
+                                                   {'user-id': 'value2', 'username': 'value1'})
+
+    expected = 'https://s3.amazonaws.com/dummy/P0001_T1/test.tar.gz' \
+               '?X-Amz-Algorithm=AWS4-HMAC-SHA256' \
+               '&X-Amz-Credential=AKIDEXAMPLE%2F20180219%2Fus-east-1%2Fs3%2Faws4_request' \
+               '&X-Amz-Date=20180219T000000Z' \
+               '&X-Amz-Expires=86400' \
+               '&X-Amz-SignedHeaders=host&user-id=value2&username=value1' \
+               '&X-Amz-Signature=b614978c0c1272646022241f2e9e97a4d46f10cab451f0ee9813ec20061a7c26'
+    assert presigned_url == expected

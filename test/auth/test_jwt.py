@@ -2,8 +2,8 @@
 
 from collections import OrderedDict
 
-import flask
 import jwt
+import flask
 import pytest
 import requests
 

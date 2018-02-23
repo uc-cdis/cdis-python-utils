@@ -1,7 +1,6 @@
 # Licensed under the MIT License:
 # http://opensource.org/licenses/MIT
 
-import hmac
 import hashlib
 import datetime
 import re
@@ -9,10 +8,10 @@ import shlex
 import posixpath
 import cdispyutils.constants as constants
 import copy
-from requests import Request
 
-from .hmac4_signing_key import HMAC4SigningKey
-from six import PY2, text_type
+
+from .error import DateFormatError, UnauthorizedError
+from six import PY2
 
 try:
     from urllib.parse import urlparse, parse_qs, quote, unquote
@@ -21,33 +20,25 @@ except ImportError:
     from urllib import quote, unquote
 
 
-class DateFormatError(Exception):
-    pass
-
-
-class HMAC4Error(Exception):
-    def __init__(self, message='', json=None):
-        self.message = message
-        self.json = json
-
-
-class UnauthorizedError(HMAC4Error):
-    def __init__(self, message='', json=None):
-        super(UnauthorizedError, self).__init__(message, json)
-        self.code = 401
-
-
-class ExpiredTimeError(HMAC4Error):
-    def __init__(self, message='', json=None):
-        super(ExpiredTimeError, self).__init__(message, json)
-        self.code = 500
-
-
 DEFAULT_INCLUDE_HEADERS = [
     'Host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
 
 
-def get_sign_string_from_req(req, service, except_headers=None, include=None):
+def parse_access_key_and_signature(req):
+    try:
+        authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
+    except Exception as ex:
+        raise UnauthorizedError("No authentication provided!: {}".format(ex))
+    try:
+        signature = re.match(r'.*Signature=(\S*)', authorization_header).group(1)
+        access_key = re.match(r'.*Credential=(\S*?)\/.*', authorization_header).group(1)
+        return access_key, signature
+    except Exception as ex:
+        raise UnauthorizedError("Authorization header incorrect: "
+                                "missing signature or credential in header!: {}".format(ex))
+
+
+def get_sign_string_from_req(req, service, include=None):
     scope = get_request_scope(req, service)
     # generate signature
     cano_headers, signed_headers = get_canonical_headers(req, include)
@@ -57,55 +48,27 @@ def get_sign_string_from_req(req, service, except_headers=None, include=None):
     return sig_string.encode('utf-8')
 
 
-def set_req_date(req, req_date):
-    if constants.REQUEST_DATE_HEADER in req.headers:
-        del req.headers[constants.REQUEST_DATE_HEADER]
-    req.headers[constants.REQUEST_DATE_HEADER] = req_date
+def get_sig_string(req, cano_req, scope):
+    """
+    Generate the AWS4 auth string to sign for the request.
 
+    req      -- Requests PreparedRequest object. This should already
+                include an x-amz-date header.
+    cano_req -- The Canonical Request, as returned by
+                get_canonical_request()
 
-def set_encoded_body(req):
-    # encode body and generate body hash
-    if hasattr(req, 'body') and req.body is not None:
-        encode_body(req)
-        content_hash = hashlib.sha256(req.body)
-    else:
-        content_hash = hashlib.sha256(b'')
-    req.headers[constants.HASHED_REQUEST_CONTENT] = content_hash.hexdigest()
-
-
-def create_authentication_headers(
-        access_key, scope, signed_headers, signature):
-    auth_str = 'HMAC-SHA256 '
-    auth_str += 'Credential={}/{}, '.format(access_key, scope)
-    auth_str += 'SignedHeaders={}, '.format(signed_headers)
-    auth_str += 'Signature={}'.format(signature)
-    return auth_str
-
-
-def generate_signature(secret_key, sig_string):
-    hsh = hmac.new(secret_key, sig_string, hashlib.sha256)
-    sig = hsh.hexdigest()
-    return sig
-
-
-def parse_access_key_and_signature(req):
-    try:
-        authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
-    except:
-        raise UnauthorizedError("No authentication provided!")
-    try:
-        signature = re.match(r'.*Signature=(\S*)', authorization_header).group(1)
-        access_key = re.match(r'.*Credential=(\S*?)\/.*', authorization_header).group(1)
-        return access_key, signature
-    except:
-        raise UnauthorizedError("Authorization header incorrect: missing signature or credential in header!")
+    """
+    req_date = req.headers[constants.REQUEST_DATE_HEADER]
+    hsh = hashlib.sha256(cano_req.encode())
+    sig_items = [constants.ALGORITHM, req_date, scope, hsh.hexdigest()]
+    sig_string = '\n'.join(sig_items)
+    return sig_string
 
 
 def get_request_scope(req, service):
     date = get_request_date(req)
 
     date = date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT)
-    #date = req.headers["x-amz-date"]
     return '{}/{}/{}'.format(date, service, constants.BIONIMBUS_REQUEST)
 
 
@@ -195,61 +158,6 @@ def get_request_date(req):
             break
 
     return date
-
-
-def get_exact_request_time(req):
-    """
-    Try to pull a date from the request by looking first at the
-    x-amz-date header, and if that's not present then the Date header.
-
-    Return a datetime.date object, or None if neither date header
-    is found or is in a recognisable format.
-
-    req -- a requests PreparedRequest object
-
-    """
-    date = None
-    for header in [constants.REQUEST_DATE_HEADER, 'date']:
-        if header not in req.headers:
-            continue
-        try:
-            date = datetime.datetime.strptime(
-                req.headers[header], constants.FULL_DATE_TIME_FORMAT)
-        except DateFormatError:
-            continue
-        else:
-            break
-
-    return date
-
-
-def encode_body(req):
-    """
-    Encode body of request to bytes and update content-type if required.
-
-    If the body of req is Unicode then encode to the charset found in
-    content-type header if present, otherwise UTF-8, or ASCII if
-    content-type is application/x-www-form-urlencoded. If encoding to UTF-8
-    then add charset to content-type. Modifies req directly, does not
-    return a modified copy.
-
-    req -- Requests PreparedRequest object
-
-    """
-    if isinstance(req.body, text_type):
-        split = req.headers.get('content-type', 'text/plain').split(';')
-        if len(split) == 2:
-            ct, cs = split
-            cs = cs.split('=')[1]
-            req.body = req.body.encode(cs)
-        else:
-            ct = split[0]
-            if (ct == 'application/x-www-form-urlencoded' or
-                    constants.REQUEST_HEADER_PREFIX in ct):
-                req.body = req.body.encode()
-            else:
-                req.body = req.body.encode('utf-8')
-                req.headers['content-type'] = ct + '; charset=utf-8'
 
 
 def get_canonical_request(req, cano_headers, signed_headers):
@@ -420,81 +328,6 @@ def normalize_whitespace(text):
 
     """
     return ' '.join(shlex.split(text, posix=False))
-
-
-def get_sig_string(req, cano_req, scope):
-    """
-    Generate the AWS4 auth string to sign for the request.
-
-    req      -- Requests PreparedRequest object. This should already
-                include an x-amz-date header.
-    cano_req -- The Canonical Request, as returned by
-                get_canonical_request()
-
-    """
-    req_date = req.headers[constants.REQUEST_DATE_HEADER]
-    hsh = hashlib.sha256(cano_req.encode())
-    sig_items = [constants.ALGORITHM, req_date, scope, hsh.hexdigest()]
-    sig_string = '\n'.join(sig_items)
-    return sig_string
-
-
-def check_expired_time(req_date):
-    return (
-        req_date + datetime.timedelta(minutes=15)
-        > datetime.datetime.utcnow())
-
-def parse_signed_headers(req):
-    try:
-        authorization_header = req.headers[constants.AUTHORIZATION_HEADER]
-        signed_headers = re.match(r'.*SignedHeaders=(\S*?),.*', authorization_header).group(1)
-        signed_headers = signed_headers.split(";")
-        return signed_headers
-    except:
-        raise AttributeError("No authentication provided or SignedHeaders missing!")
-
-# TODO (thanh): write unit-test for:
-# - set_req_date
-# - set_encoded_body
-# - get_sign_string_from_req
-# - get_request_scope
-# - generate_signature
-# - get_canonical_headers
-def sign_request(req, access_key, signing_key, service, req_date):
-    set_req_date(req, req_date)
-    set_encoded_body(req)
-    scope = get_request_scope(req, service)
-
-    sig_string = get_sign_string_from_req(req, service)
-    signature = generate_signature(signing_key.key, sig_string)
-
-    cano_headers, signed_headers = get_canonical_headers(req)
-    req.headers[constants.AUTHORIZATION_HEADER] = (
-        create_authentication_headers
-        (access_key, scope, signed_headers, signature))
-    return req
-
-
-# TODO (thanh): write unit-test for:
-# - parse_access_key_and_signature
-# - get_exact_request_time
-# - get_sign_string_from_req
-# - generate_signature
-def verify(service, req, secret_key):
-    access_key, signature = parse_access_key_and_signature(req)
-    signed_headers = parse_signed_headers(req)
-    req_date = get_exact_request_time(req)
-    if not check_expired_time(req_date):
-        raise ExpiredTimeError("Request expired!")
-
-    sig_string = get_sign_string_from_req(req, service, include=signed_headers)
-    signing_key = HMAC4SigningKey(
-        secret_key, service, req_date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT))
-    regenerate_signature = generate_signature(signing_key.key, sig_string)
-
-    if signature != regenerate_signature:
-        raise UnauthorizedError("Server and client signatures don't match!")
-    return access_key
 
 
 def parse_service(req):
