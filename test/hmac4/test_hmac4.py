@@ -139,13 +139,15 @@ def test_generate_presigned_url():
     with mock_datetime(date, datetime):
         presigned_url = generate_aws_presigned_url(url, 'GET', access_key, secret_key,
                                                    's3', 'us-east-1', 86400,
-                                                   {'user-id': 'value2', 'username': 'value1'})
+                                                   {'user-id': 'value2', 'username': 'value1@gmail.com'})
 
     expected = 'https://s3.amazonaws.com/dummy/P0001_T1/test.tar.gz' \
                '?X-Amz-Algorithm=AWS4-HMAC-SHA256' \
                '&X-Amz-Credential=AKIDEXAMPLE%2F20180219%2Fus-east-1%2Fs3%2Faws4_request' \
                '&X-Amz-Date=20180219T000000Z' \
                '&X-Amz-Expires=86400' \
-               '&X-Amz-SignedHeaders=host&user-id=value2&username=value1' \
-               '&X-Amz-Signature=b614978c0c1272646022241f2e9e97a4d46f10cab451f0ee9813ec20061a7c26'
+               '&X-Amz-SignedHeaders=host' \
+               '&user-id=value2' \
+               '&username=value1%40gmail.com' \
+               '&X-Amz-Signature=d0d8f16f2bf3f3612c7b1c3501055740bed6b597ff627546900c0949984cd179'
     assert presigned_url == expected
