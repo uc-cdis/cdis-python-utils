@@ -111,7 +111,7 @@ def generate_presigned_url(url, method, access_key, signing_key, request_date, e
         canonical_qs += '&' + key + '=' + querystring[key]
     canonical_qs = canonical_qs[1:]
     for key in sorted(additional_signed_qs.iterkeys()):
-        canonical_qs += '&' + key + '=' + additional_signed_qs[key]
+        canonical_qs += '&' + key + '=' + quote_plus(additional_signed_qs[key])
 
     url_parts = url.split('://')
     host_parts = url_parts[1].split('/')
