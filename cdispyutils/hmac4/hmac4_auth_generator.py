@@ -5,7 +5,7 @@ import hmac
 from six import text_type
 
 try:
-    from urllib.parse import urlparse, parse_qs, unquote, quote_plus
+    from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
 except ImportError:
     from urlparse import urlparse, parse_qs
     from urllib import quote, unquote, quote_plus
@@ -115,7 +115,7 @@ def generate_presigned_url(url, method, access_key, signing_key, request_date, e
 
     url_parts = url.split('://')
     host_parts = url_parts[1].split('/')
-    canonical_uri = '/' + '/'.join(host_parts[1:]) if len(host_parts) > 1 else '/'
+    canonical_uri = quote('/' + '/'.join(host_parts[1:]) if len(host_parts) > 1 else '/')
     canonical_request = '\n'.join(
         [method.upper(), canonical_uri, canonical_qs,
          'host:' + host_parts[0] + '\n', 'host', 'UNSIGNED-PAYLOAD']
