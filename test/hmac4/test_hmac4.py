@@ -164,7 +164,7 @@ def test_generate_presigned_url_escaped():
 
     expected = 'https://s3.amazonaws.com/dummy/P0001_T1/[test];.tar.gz' \
                '?X-Amz-Algorithm=AWS4-HMAC-SHA256' \
-               '&X-Amz-Credential=AKIDEXAMPLE%2F20180219%2Fus-east-1%2Fs3%2Faws4_request' \
+               '&X-Amz-Credential=AKIDEXAMPLE%2F19990219%2Fus-east-1%2Fs3%2Faws4_request' \
                '&X-Amz-Date=19990219T000000Z' \
                '&X-Amz-Expires=86400' \
                '&X-Amz-SignedHeaders=host' \
