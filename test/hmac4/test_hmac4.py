@@ -170,5 +170,5 @@ def test_generate_presigned_url_escaped():
                '&X-Amz-SignedHeaders=host' \
                '&user-id=value2' \
                '&username=value1%40gmail.com' \
-               '&X-Amz-Signature=d0d8f16f2bf3f3612c7b1c3501055740bed6b597ff627546900c0949984cd179'
+               '&X-Amz-Signature=ac6cccd961fe338bc927ec31c977b03d630eb2f9b1bc3a1f3fa4d0acb4b5eb1f'
     assert presigned_url == expected
