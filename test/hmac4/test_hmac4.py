@@ -14,9 +14,10 @@ from cdispyutils.hmac4 import generate_aws_presigned_url
 from six import PY2
 
 try:
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, quote_plus
 except ImportError:
     from urlparse import urlparse
+    from urllib import quote_plus
 
 import requests
 from test.mock_datetime import mock_datetime
@@ -132,33 +133,40 @@ def test_generate_signature():
 
 
 def test_generate_presigned_url():
-    access_key = 'AKIDEXAMPLE'
-    secret_key = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
-    url = 'https://s3.amazonaws.com/dummy/P0001_T1/test.tar.gz'
+    cred = {
+        'aws_access_key_id': 'AKIDEXAMPLE',
+        'aws_secret_access_key': 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
+        'aws_session_token': 'FQoDYXdzEPv//////////wEaDD/RcZIzhOP3tz1Ut7NW7jud8VV53T59A2TNO2ZXkt'
+    }
+    url = 'https://s3.amazonaws.com/cdis-presigned-url-test/testdata'
     date = datetime.date(2018, 02, 19)
     with mock_datetime(date, datetime):
-        presigned_url = generate_aws_presigned_url(url, 'GET', access_key, secret_key,
+        presigned_url = generate_aws_presigned_url(url, 'GET', cred,
                                                    's3', 'us-east-1', 86400,
                                                    {'user-id': 'value2', 'username': 'value1@gmail.com'})
-
-    expected = 'https://s3.amazonaws.com/dummy/P0001_T1/test.tar.gz' \
-               '?X-Amz-Algorithm=AWS4-HMAC-SHA256' \
+    print(presigned_url)
+    expected = '{}?X-Amz-Algorithm=AWS4-HMAC-SHA256' \
                '&X-Amz-Credential=AKIDEXAMPLE%2F20180219%2Fus-east-1%2Fs3%2Faws4_request' \
                '&X-Amz-Date=20180219T000000Z' \
                '&X-Amz-Expires=86400' \
+               '&X-Amz-Security-Token={}' \
                '&X-Amz-SignedHeaders=host' \
                '&user-id=value2' \
                '&username=value1%40gmail.com' \
-               '&X-Amz-Signature=d0d8f16f2bf3f3612c7b1c3501055740bed6b597ff627546900c0949984cd179'
+               '&X-Amz-Signature=89af63e98712c6947d163c6c873a2b419b33a3c724ecd64c9fd6ddaf487fd4f9'\
+        .format(url, quote_plus(cred.get('aws_session_token')))
     assert presigned_url == expected
 
+
 def test_generate_presigned_url_escaped():
-    access_key = 'AKIDEXAMPLE'
-    secret_key = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
+    cred = {
+        'aws_access_key_id': 'AKIDEXAMPLE',
+        'aws_secret_access_key': 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
+    }
     url = 'https://s3.amazonaws.com/dummy/P0001_T1/[test];.tar.gz'
     date = datetime.date(1999, 02, 19)
     with mock_datetime(date, datetime):
-        presigned_url = generate_aws_presigned_url(url, 'GET', access_key, secret_key,
+        presigned_url = generate_aws_presigned_url(url, 'GET', cred,
                                                    's3', 'us-east-1', 86400,
                                                    {'user-id': 'value2', 'username': 'value1@gmail.com'})
 

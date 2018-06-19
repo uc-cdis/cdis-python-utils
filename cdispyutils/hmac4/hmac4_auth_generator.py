@@ -92,7 +92,8 @@ def sign_request(req, access_key, signing_key, service, req_date):
     return req
 
 
-def generate_presigned_url(url, method, access_key, signing_key, request_date, expires, additional_signed_qs):
+def generate_presigned_url(url, method, access_key, signing_key, request_date, expires, additional_signed_qs,
+                           session_token=None):
     credential_scope = '/'.join([
         s for s in [signing_key.short_date_stamp, signing_key.region,
                     signing_key.service, signing_key.postfix]
@@ -104,6 +105,8 @@ def generate_presigned_url(url, method, access_key, signing_key, request_date, e
     querystring[constants.AWS_CREDENTIAL_KEY] = quote_plus('/'.join([access_key, credential_scope]))
     querystring[constants.AWS_DATE_KEY] = request_date
     querystring[constants.AWS_EXPIRES_KEY] = str(expires)
+    if session_token:
+        querystring['X-Amz-Security-Token'] = quote_plus(session_token)
     querystring[constants.AWS_SIGNED_HEADERS_KEY] = 'host'
 
     canonical_qs = ''
