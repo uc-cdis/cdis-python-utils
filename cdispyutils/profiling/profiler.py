@@ -10,9 +10,23 @@ from werkzeug.contrib.profiler import ProfilerMiddleware
 
 class Profiler(object):
     """
+    Output profiling information for specified function calls and Flask requests.
+
+    The profiler singleton for a flask application saves profiling files into the
+    specified directory. All files use the standard format for python profiling; use
+    ``pstats`` to tabulate the information from one or more files, or a visualization
+    tool like ``snakeviz``.
+
+    A typical output for a Flask application might look like this:
+
         profile/
-            init/
-            api/
+          init/
+            db_init-2018-11-28T11:47:51
+            blueprints_init-2018-11-28T11:47:51
+          flask/
+            GET-fence.data.upload-2018-11-28T11:49:42
+            GET-fence.data.upload-2018-11-28T11:56:55
+
     """
 
     def __init__(self, directory="profile", logger=None, enable=False):
@@ -26,6 +40,8 @@ class Profiler(object):
                     .format(self.directory)
                 )
             os.mkdir(self.directory)
+        if self.logger:
+            self.logger.info("profiling enabled")
 
     def call(self, category, f, *args, **kwargs):
         if not self.enabled:
@@ -48,13 +64,18 @@ class Profiler(object):
         )
 
     def profile_app(self, app):
-        path = self._make_profile_category("flask")
-        app = ProfilerMiddleware(app, profile_dir=path)
+        if self.enabled:
+            path = self._make_profile_category("flask")
+            app = ProfilerMiddleware(app, profile_dir=path)
         return app
 
     def _make_profile_category(self, name):
         path = os.path.join(self.directory, name)
-        if not os.path.exists(path):
+        if not os.path.isdir(path):
+            if os.path.isfile(path):
+                raise EnvironmentError(
+                    "can't save profile output; file already exists: {}".format(path)
+                )
             os.mkdir(path)
         return path
 
