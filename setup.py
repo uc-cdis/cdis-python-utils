@@ -10,6 +10,7 @@ setup(
         "PyJWT==1.5.3",
         'requests>=2.5.2,<3.0.0',
         "six==1.11.0",
+        "Werkzeug>=0.9.6,<1.0.0",
     ],
     packages=find_packages(),
 )
