@@ -33,7 +33,7 @@ class Profiler(object):
                 profiler.call("init", f, app)
             profiler.profile_app(app)
 
-    A typical output for this Flask application might look like this:
+    The output for this Flask application would look like this:
 
         profile/
           2018-11-30T15:15:36.14/
@@ -44,6 +44,8 @@ class Profiler(object):
               GET.root.000003ms.1543612537.prof
               GET._status.000019ms.1543612539.prof
 
+    In this example the ``directory`` argument is ``"profile"``, and the ``name`` was
+    ``None`` so it defaults to just a timestamp.
     """
 
     def __init__(self, directory="profile", name=None, logger=None, enable=False):
@@ -58,7 +60,6 @@ class Profiler(object):
                         "can't save profile output; file already exists: {}"
                         .format(self.directory)
                     )
-                import pdb; pdb.set_trace()
                 os.mkdir(self.directory)
             if self.logger:
                 self.logger.info("profiling enabled")
