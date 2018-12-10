@@ -1,11 +1,30 @@
 __all__ = ["Profiler"]
 
-
+from collections import defaultdict
 import cProfile
 import datetime
+import functools
 import os
+import time
 
 from werkzeug.contrib.profiler import ProfilerMiddleware
+
+
+def profile(category, *profiler_args, **profiler_kwargs):
+    """
+    Decorate a function to run a profiler on the execution of that function.
+    """
+    profiler = Profiler(enable=True, *profiler_args, **profiler_kwargs)
+
+    def decorator(f):
+
+        @functools.wraps(f)
+        def wrapper(*f_args, **f_kwargs):
+            return profiler.call(category, f, args=f_args, kwargs=f_kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class Profiler(object):
@@ -33,13 +52,17 @@ class Profiler(object):
                 profiler.call("init", f, app)
             profiler.profile_app(app)
 
-    The output for this Flask application would look like this:
+    The output for this Flask application might look like this:
 
         profile/
           2018-11-30T15:15:36.14/
             init/
-              app_register_blueprints.prof
-              db_init.prof
+              app_register_blueprints-1.prof
+              db_init-1.prof
+            run/
+              traverse-1.prof
+              traverse-2.prof
+              traverse-3.prof
             wsgi/
               GET.root.000003ms.1543612537.prof
               GET._status.000019ms.1543612539.prof
@@ -48,11 +71,16 @@ class Profiler(object):
     ``None`` so it defaults to just a timestamp.
     """
 
-    def __init__(self, directory="profile", name=None, logger=None, enable=False):
+    def __init__(
+        self, directory="profile", name=None, logger=None, enable=False,
+        output_style="detailed"
+    ):
         name = name or self._make_timestamp()
         self.directory = os.path.join(directory, name)
         self.logger = logger
+        self.output_style = output_style
         self._enable = enable
+        self._function_counts = defaultdict(lambda: defaultdict(int))
         if self.enabled:
             if not os.path.isdir(self.directory):
                 if os.path.isfile(self.directory):
@@ -60,7 +88,7 @@ class Profiler(object):
                         "can't save profile output; file already exists: {}"
                         .format(self.directory)
                     )
-                os.mkdir(self.directory)
+                os.makedirs(self.directory, mode=0o744)
             if self.logger:
                 self.logger.info("profiling enabled")
 
@@ -75,21 +103,47 @@ class Profiler(object):
             or os.environ.get("ENABLE_PYTHON_PROFILING", "").lower() == "true"
         )
 
-    def call(self, category, f, *args, **kwargs):
+    def call(self, category, f, args=None, kwargs=None, output_style=None):
         """
         Do a function call and (if the profiler is enabled) save profiling results to
         the directory for this category.
         """
+        args = args or []
+        kwargs = kwargs or {}
         if not self.enabled:
             return f(*args, **kwargs)
-        profiler = cProfile.Profile()
-        result = f(*args, **kwargs)
-        profiler.disable()
-        self._make_profile_category(category)
-        filename = f.__name__ + ".prof"
-        path = os.path.join(self.directory, category, filename)
-        profiler.dump_stats(path)
-        return result
+
+        # count the number of times this function is executed in this category, so the
+        # filenames are kept unique
+        function_name = "{}.{}".format(f.__module__, f.__name__)
+        self._function_counts[category][function_name] += 1
+
+        output_style = output_style or self.output_style or "detailed"
+        if self.output_style == "detailed":
+            profiler = cProfile.Profile()
+            profiler.enable()
+            result = f(*args, **kwargs)
+            profiler.disable()
+            self._make_profile_category(category)
+            filename = "{}-{}.prof".format(
+                function_name,
+                str(self._function_counts[category][function_name]),
+            )
+            path = os.path.join(self.directory, category, filename)
+            profiler.dump_stats(path)
+            return result
+        elif self.output_style == "simple":
+            start = time.time()
+            result = f(*args, **kwargs)
+            execution_time = time.time() - start
+            filename = "{}-{}.time".format(
+                function_name,
+                str(self._function_counts[category][function_name]),
+            )
+            path = os.path.join(self.directory, category, filename)
+            with open(path, "w") as output_file:
+                output_file.write(str(execution_time))
+            return result
 
     def profile_app(self, app):
         """
@@ -101,6 +155,10 @@ class Profiler(object):
             app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=path)
 
     def _make_profile_category(self, name):
+        """
+        Add a directory under the profiling directory given at initialization, for
+        saving a category of results into.
+        """
         path = os.path.join(self.directory, name)
         if not os.path.isdir(path):
             if os.path.isfile(path):
