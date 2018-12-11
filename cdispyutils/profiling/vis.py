@@ -1,3 +1,5 @@
+__all__ = ["ProfilePlotter"]
+
 from functools import reduce
 import os
 import pstats
@@ -12,18 +14,17 @@ class StatsCollection(object):
     def __init__(self, directory, logger=None):
         self.stats = {}
 
+        # if the program is interrupted or killed during execution then the profiler
+        # output can be messed up---just ignore if this happens, and print the list of
+        # these later
+        corrupted = []
+
         def load_file(filepath):
             try:
                 return pstats.Stats(filepath)
             except TypeError:
-                msg = (
-                    "couldn't load profile from {} (file probably corrupted)"
-                    .format(filepath)
-                )
-                if logger:
-                    logger.info(msg)
-                else:
-                    print(msg)
+                # corrupted file: ignore & save
+                corrupted.append(filepath)
 
         # walk all files in the profiling directory and save stats into the dictionary
         for path, _, files in os.walk(directory):
@@ -34,6 +35,17 @@ class StatsCollection(object):
             # add entry to the stats dictionary
             here[split[-1]] = {f: load_file(os.path.join(path, f)) for f in files}
             here[split[-1]] = {f: stat for f, stat in here[split[-1]].iteritems() if stat}
+
+        if corrupted:
+            msg = (
+                "couldn't load profile from the following files (probably corrupted): "
+                + str(corrupted)
+            )
+            if logger:
+                logger.info(msg)
+            else:
+                print(msg)
+
         self.stats = self.stats[directory]
 
 
@@ -133,8 +145,6 @@ class ProfilePlotter(object):
                     plt.setp(axes.get_xticklabels(), rotation=45, horizontalalignment='right')
 
                     pdf.savefig(figure, bbox_inches="tight")
-
-            pdf.savefig()
 
 
 def _aggregate_wsgi_filename(filename):

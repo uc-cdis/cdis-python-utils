@@ -1,4 +1,4 @@
-__all__ = ["Profiler"]
+__all__ = ["Profiler", "profile"]
 
 
-from cdispyutils.profiling.profiler import Profiler
+from cdispyutils.profiling.profiler import Profiler, profile
