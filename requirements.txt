@@ -1,2 +1,31 @@
--e git+https://git@github.com/uc-cdis/cdiserrors.git@0.0.4#egg=cdiserrors
--e git+https://git@github.com/uc-cdis/cdislogging.git@master#egg=cdislogging
+-i https://pypi.org/simple
+-e .[profiling,uwsgi]
+-e git+https://git@github.com/uc-cdis/cdiserrors.git@6309e8a144a41c47f81cf1fd7b751164ef3275a0#egg=cdiserrors
+-e git+https://git@github.com/uc-cdis/cdislogging.git@a58c019124d4c7596b21461e2947e4befc11d676#egg=cdislogging
+asn1crypto==0.24.0
+backports.functools-lru-cache==1.5
+certifi==2018.11.29
+cffi==1.12.0
+chardet==3.0.4
+cryptography==2.5
+cycler==0.10.0
+enum34==1.1.6 ; python_version < '3'
+flask==0.10.1
+idna==2.8
+ipaddress==1.0.22 ; python_version < '3'
+itsdangerous==1.1.0
+jinja2==2.10
+kiwisolver==1.0.1
+markupsafe==1.1.0
+matplotlib==2.2.3
+numpy==1.16.1
+pycparser==2.19
+pyjwt==1.5.3
+pyparsing==2.3.1
+python-dateutil==2.8.0
+pytz==2018.9
+requests==2.21.0
+six==1.11.0
+subprocess32==3.5.3
+urllib3==1.24.1
+werkzeug==0.12.2
