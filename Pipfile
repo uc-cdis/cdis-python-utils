@@ -4,11 +4,12 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pytest = "*"
+pytest-flask = "*"
+mock = "*"
 
 [packages]
 cdispyutils = {editable = true,extras = ["profiling", "uwsgi"],path = "."}
-cdiserrors = {editable = true,git = "https://git@github.com/uc-cdis/cdiserrors.git",ref = "0.0.4"}
-cdislogging = {editable = true,git = "https://git@github.com/uc-cdis/cdislogging.git",ref = "master"}
 
 [requires]
 python_version = "2.7"

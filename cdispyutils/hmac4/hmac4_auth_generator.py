@@ -1,6 +1,6 @@
 import hashlib
 import cdispyutils.constants as constants
-import hmac4_auth_parser as hmac4_parser
+from . import hmac4_auth_parser as hmac4_parser
 import hmac
 from six import text_type
 
