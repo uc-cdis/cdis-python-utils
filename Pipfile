@@ -1,0 +1,15 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+pytest-flask = "*"
+mock = "*"
+
+[packages]
+cdispyutils = {editable = true,extras = ["profiling", "uwsgi"],path = "."}
+
+[requires]
+python_version = "2.7"

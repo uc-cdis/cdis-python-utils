@@ -119,7 +119,7 @@ def test_generate_signature():
     req = request_from_text(req_text)
     del req.headers['content-length']
 
-    target_date = datetime.datetime(2018, 02, 16)
+    target_date = datetime.datetime(2018, 2, 16)
     auth = HMAC4Auth('dummy', key)
     encode_body(req)
     hsh = hashlib.sha256(req.body)
@@ -139,7 +139,7 @@ def test_generate_presigned_url():
         'aws_session_token': 'FQoDYXdzEPv//////////wEaDD/RcZIzhOP3tz1Ut7NW7jud8VV53T59A2TNO2ZXkt'
     }
     url = 'https://s3.amazonaws.com/cdis-presigned-url-test/testdata'
-    date = datetime.date(2018, 02, 19)
+    date = datetime.date(2018, 2, 19)
     with mock_datetime(date, datetime):
         presigned_url = generate_aws_presigned_url(url, 'GET', cred,
                                                    's3', 'us-east-1', 86400,
@@ -164,7 +164,7 @@ def test_generate_presigned_url_escaped():
         'aws_secret_access_key': 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY'
     }
     url = 'https://s3.amazonaws.com/dummy/P0001_T1/[test];.tar.gz'
-    date = datetime.date(1999, 02, 19)
+    date = datetime.date(1999, 2, 19)
     with mock_datetime(date, datetime):
         presigned_url = generate_aws_presigned_url(url, 'GET', cred,
                                                    's3', 'us-east-1', 86400,

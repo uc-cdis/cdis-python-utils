@@ -5,8 +5,8 @@ import datetime
 import cdispyutils.constants as constants
 import re
 
-import hmac4_auth_parser as parser
-import hmac4_auth_generator as generator
+from . import hmac4_auth_parser as parser
+from . import hmac4_auth_generator as generator
 
 from .error import ExpiredTimeError, DateFormatError, UnauthorizedError
 from .hmac4_signing_key import HMAC4SigningKey
