@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ee4b101299c87f923a1756d010b53f29d24672fab696a361e029bc63e2e6a366"
+            "sha256": "2fead03ecc5cf8a251227f2a6aad117c26e89f00a116c85ffbba560ac8d966b0"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -45,8 +45,7 @@
         "cdispyutils": {
             "editable": true,
             "extras": [
-                "profiling",
-                "uwsgi"
+                "profiling"
             ],
             "path": "."
         },
@@ -504,11 +503,11 @@
         },
         "pytest": {
             "hashes": [
-                "sha256:80cfd9c8b9e93f419abcc0400e9f595974a98e44b6863a77d3e1039961bfc9c4",
-                "sha256:c2396a15726218a2dfef480861c4ba37bd3952ebaaa5b0fede3fc23fddcd7f8c"
+                "sha256:067a1d4bf827ffdd56ad21bd46674703fce77c5957f6c1eef731f6146bfcef1c",
+                "sha256:9687049d53695ad45cf5fdc7bbd51f0c49f1ea3ecfc4b7f3fde7501b541f17f4"
             ],
             "index": "pypi",
-            "version": "==4.2.1"
+            "version": "==4.3.0"
         },
         "pytest-flask": {
             "hashes": [
