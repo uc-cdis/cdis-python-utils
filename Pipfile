@@ -9,7 +9,7 @@ pytest-flask = "*"
 mock = "*"
 
 [packages]
-cdispyutils = {editable = true,extras = ["profiling", "uwsgi"],path = "."}
+cdispyutils = {editable = true,extras = ["profiling"],path = "."}
 
 [requires]
 python_version = "2.7"
