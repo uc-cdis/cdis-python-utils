@@ -31,7 +31,7 @@ def setup_user_harakiri(app):
         timeout = request.environ.get("GEN3_TIMEOUT_SECONDS")
         if not timestamp or not timeout:
             return None
-        timeout = float(timestamp) + float(timeout) - time.time()
+        timeout = float(timestamp) + float(timeout.rstrip("s")) - time.time()
         if timeout < 1:
             # We don't proceed if the time remaining is less than 1 second because the
             # minimal harakiri time is 1 second. Therefore it is important to set
