@@ -16,8 +16,8 @@ from six import PY2
 try:
     from urllib.parse import urlparse, parse_qs, quote, unquote
 except ImportError:
-    from urlparse import urlparse, parse_qs
-    from urllib import quote, unquote
+    from urllib.parse import urlparse, parse_qs
+    from urllib.parse import quote, unquote
 
 
 DEFAULT_INCLUDE_HEADERS = [
@@ -119,7 +119,7 @@ def normalize_date_format(date_str):
     }
 
     out_date = None
-    for regex, xform in formats.items():
+    for regex, xform in list(formats.items()):
         m = re.search(regex, date_str)
         if m:
             out_date = xform(m)
@@ -224,7 +224,7 @@ def get_canonical_headers(req, include=None):
     # Requests, since it uses a case-insensitive dict to hold headers, this
     # is here just in case you duck type with a regular dict
     cano_headers_dict = {}
-    for hdr, val in headers.items():
+    for hdr, val in list(headers.items()):
         hdr = hdr.strip().lower()
         val = normalize_whitespace(val).strip()
         if (hdr in include or '*' in include or
@@ -280,7 +280,7 @@ def format_cano_path(path):
         qm = b'?' if PY2 else '?'
         full_path = qm.join((full_path, qs))
     if PY2:
-        full_path = unicode(full_path)
+        full_path = str(full_path)
     return full_path
 
 
@@ -306,17 +306,17 @@ def format_cano_querystring(qs):
     qs = qs.split(space)[0]
     qs = quote(qs, safe=safe_qs_amz_chars)
     qs_items = {}
-    for name, vals in parse_qs(qs, keep_blank_values=True).items():
+    for name, vals in list(parse_qs(qs, keep_blank_values=True).items()):
         name = quote(name, safe=safe_qs_unresvd)
         vals = [quote(val, safe=safe_qs_unresvd) for val in vals]
         qs_items[name] = vals
     qs_strings = []
-    for name, vals in qs_items.items():
+    for name, vals in list(qs_items.items()):
         for val in vals:
             qs_strings.append('='.join([name, val]))
     qs = '&'.join(sorted(qs_strings))
     if PY2:
-        qs = unicode(qs)
+        qs = str(qs)
     return qs
 
 

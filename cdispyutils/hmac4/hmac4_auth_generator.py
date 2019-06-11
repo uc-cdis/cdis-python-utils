@@ -7,8 +7,8 @@ from six import text_type
 try:
     from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
 except ImportError:
-    from urlparse import urlparse, parse_qs
-    from urllib import quote, unquote, quote_plus
+    from urllib.parse import urlparse, parse_qs
+    from urllib.parse import quote, unquote, quote_plus
 
 def set_req_date(req, req_date):
     if constants.REQUEST_DATE_HEADER in req.headers:
@@ -110,10 +110,10 @@ def generate_presigned_url(url, method, access_key, signing_key, request_date, e
     querystring[constants.AWS_SIGNED_HEADERS_KEY] = 'host'
 
     canonical_qs = ''
-    for key in sorted(querystring.iterkeys()):
+    for key in sorted(querystring.keys()):
         canonical_qs += '&' + key + '=' + querystring[key]
     canonical_qs = canonical_qs[1:]
-    for key in sorted(additional_signed_qs.iterkeys()):
+    for key in sorted(additional_signed_qs.keys()):
         canonical_qs += '&' + key + '=' + quote_plus(additional_signed_qs[key])
 
     url_parts = url.split('://')

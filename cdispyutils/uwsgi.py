@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import time
 from flask import request, abort
@@ -16,7 +16,7 @@ def setup_user_harakiri(app):
     """
 
     try:
-        import uwsgi
+        from . import uwsgi
     except ImportError:
         uwsgi = None
     else:

@@ -8,7 +8,7 @@ This class inspired by AWS4SigningKey from requests_aws4auth
 # http://opensource.org/licenses/MIT
 
 
-from __future__ import unicode_literals
+
 
 import hmac
 import hashlib

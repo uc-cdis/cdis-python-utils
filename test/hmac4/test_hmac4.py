@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from __future__ import unicode_literals, print_function
+
 
 import datetime
 import sys
@@ -16,8 +16,8 @@ from six import PY2
 try:
     from urllib.parse import urlparse, quote_plus
 except ImportError:
-    from urlparse import urlparse
-    from urllib import quote_plus
+    from urllib.parse import urlparse
+    from urllib.parse import quote_plus
 
 import requests
 from test.mock_datetime import mock_datetime
@@ -47,7 +47,7 @@ def request_from_text(text):
         hdr = hdr.lower()
         vals = headers.setdefault(hdr, [])
         vals.append(val)
-    headers = {hdr: ','.join(sorted(vals)) for hdr, vals in headers.items()}
+    headers = {hdr: ','.join(sorted(vals)) for hdr, vals in list(headers.items())}
     check_url = urlparse(path)
     if check_url.scheme and check_url.netloc:
         # absolute URL in path
