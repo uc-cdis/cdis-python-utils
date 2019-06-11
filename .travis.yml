@@ -2,11 +2,19 @@ language: python
 dist: xenial
 python:
 - 2.7
+- 3.6
+matrix:
+  allow_failures:
+  - python: '2.7'
 install:
 - pip install pipenv
 - pipenv install --dev --deploy --python `which python`
 - pipenv graph
+- if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then pip install -e git+https://git@github.com/uc-cdis/wool.git#egg=wool;
+  fi
 script: pipenv run py.test -v
+after_script:
+- if [[ $TRAVIS_PYTHON_VERSION == 3.6 && $PR_NUMBER != false ]]; then wool; fi
 before_deploy:
 - sed -i.bak "s/=get_version()/='$TRAVIS_TAG'/g" setup.py
 - cat setup.py
@@ -23,6 +31,8 @@ deploy:
     repo: uc-cdis/cdis-python-utils
     tags: true
 env:
+  matrix:
+  - REPOSITORY="uc-cdis/cdis-python-utils" PR_NUMBER="$TRAVIS_PULL_REQUEST"
   global:
   - PIPENV_IGNORE_VIRTUALENVS=1
   - secure: ov66mTdCG+Gl+wLAjYdqR0HrKbgpQFSxSgCi0ihTmErzQl/vudZyPXdoSEQfFsWpKGI+UmhYklsvGySnYzyhTuUTrmovQ5C9tMMASWtJrwzAgun6PIli7ETjw5j273WTwIPy/HfrysqW6ab563VYbbuxn7ZANV86wN17TKp0qyaJPD4Kc6iFp8yKei7msXPy6Pc36AYz4vVjq1AZasFLIrRy5va4VNxtNUvK4peOdKcxDTmj4GMS8eF/Y55HuOzuH/B3hw0XqCgwk+u+4DCImpvQIhsfChgI71m70/scWwhiSaVY3WEmZBbJPgFLsoBm+div2+kG8zcNvOK2OEhQgvocxzgpTik5rvZX2SRCpuBxgbZEzUEbvNPArJVLwOBlbadIpuM8+sHTj/2A/4+AboVat10jjHrevTKlCo6CXe2QPXO474eZP0f5lOsGRQ9iSW52MRRCt8yOIALWwmn5DDrwt41ezn5+JDglxPxebqFLuvutG/7XMhhCuU91MYLxI/xhliRcYL9SiZXjnEz0p91YUNQQ2seJNvw/d65ypYdJDqS8kM8II7+lL/9l41hZ2En3LDSQ5diXPzEeNVp5cz/mn2rwlehTLmGbdb0Qy3WbD9eKoY1ADR+yDTE9l3t9UtRqkJ6Jgdig1YNkmdaFmrMfMHzTntY5He78b95zyk8=
