@@ -16,7 +16,7 @@ def setup_user_harakiri(app):
     """
 
     try:
-        from . import uwsgi
+        import uwsgi
     except ImportError:
         uwsgi = None
     else:
