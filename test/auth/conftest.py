@@ -15,13 +15,13 @@ import requests
 from cdispyutils import auth
 
 
-USER_API = 'https://user-api.test.net'
-KEYS_URL = 'https://user-api.test.net/jwt/keys'
+USER_API = "https://user-api.test.net"
+KEYS_URL = "https://user-api.test.net/jwt/keys"
 
-TEST_RESPONSE_JSON = {'test_response': 'OK'}
+TEST_RESPONSE_JSON = {"test_response": "OK"}
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def iss():
     """
     Return the token issuer (``USER_API``).
@@ -29,15 +29,15 @@ def iss():
     return USER_API
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def default_audiences():
     """
     Return some default audiences to put in the claims of a JWT.
     """
-    return ['access', 'user']
+    return ["access", "user"]
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def claims(default_audiences, iss):
     """
     Return some generic claims to put in a JWT.
@@ -46,26 +46,20 @@ def claims(default_audiences, iss):
         dict: dictionary of claims
     """
     now = datetime.now()
-    iat = int(now.strftime('%s'))
-    exp = int((now + timedelta(seconds=60)).strftime('%s'))
+    iat = int(now.strftime("%s"))
+    exp = int((now + timedelta(seconds=60)).strftime("%s"))
     return {
-        'aud': default_audiences,
-        'sub': '1234',
-        'iss': iss,
-        'iat': iat,
-        'exp': exp,
-        'jti': str(uuid.uuid4()),
-        'context': {
-            'user': {
-                'name': 'test-user',
-                'projects': [
-                ],
-            },
-        },
+        "aud": default_audiences,
+        "sub": "1234",
+        "iss": iss,
+        "iat": iat,
+        "exp": exp,
+        "jti": str(uuid.uuid4()),
+        "context": {"user": {"name": "test-user", "projects": []}},
     }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def example_keys_response(public_key, different_public_key):
     """
     Return an example response JSON returned from the ``/jwt/keys`` endpoint in
@@ -81,18 +75,18 @@ def example_keys_response(public_key, different_public_key):
     return {"keys": [["key-01", public_key], ["key-02", different_public_key]]}
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def public_key():
     """
     Return a public key for testing.
     """
     os.path.dirname(os.path.realpath(__file__))
     here = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(here, 'test_public_key.pem')) as f:
+    with open(os.path.join(here, "test_public_key.pem")) as f:
         return f.read()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def different_public_key():
     """
     Return a public key for testing that doesn't form a correct keypair with
@@ -100,11 +94,11 @@ def different_public_key():
     """
     os.path.dirname(os.path.realpath(__file__))
     here = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(here, 'test_public_key_2.pem')) as f:
+    with open(os.path.join(here, "test_public_key_2.pem")) as f:
         return f.read()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def private_key():
     """
     Return a private key for testing. (Use only a private key that is
@@ -112,26 +106,26 @@ def private_key():
     """
     os.path.dirname(os.path.realpath(__file__))
     here = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(here, 'test_private_key.pem')) as f:
+    with open(os.path.join(here, "test_private_key.pem")) as f:
         return f.read()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app():
     """
     Set up a basic flask app for testing.
     """
     app = flask.Flask(__name__)
     app.debug = True
-    app.config['USER_API'] = USER_API
+    app.config["USER_API"] = USER_API
 
-    @app.route('/test')
+    @app.route("/test")
     def test_endpoint():
         """
         Define a simple endpoint for testing which requires a JWT header for
         authorization.
         """
-        auth.validate_request_jwt({'access'})
+        auth.validate_request_jwt({"access"})
         return flask.jsonify(TEST_RESPONSE_JSON)
 
     context = app.app_context()
@@ -140,7 +134,7 @@ def app():
     context.pop()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def encoded_jwt(claims, private_key):
     """
     Return an example JWT containing the claims and encoded with the private
@@ -153,10 +147,10 @@ def encoded_jwt(claims, private_key):
     Return:
         str: JWT containing claims encoded with private key
     """
-    return jwt.encode(claims, key=private_key, algorithm='RS256')
+    return jwt.encode(claims, key=private_key, algorithm="RS256")
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def auth_header(encoded_jwt):
     """
     Return an authorization header containing the example JWT.
@@ -167,8 +161,8 @@ def auth_header(encoded_jwt):
     Return:
         List[Tuple[str, str]]: the authorization header
     """
-    encoded_jwt=(encoded_jwt.decode("utf-8"))
-    return [('Authorization', 'Bearer %s' % encoded_jwt)]
+    encoded_jwt = encoded_jwt.decode("utf-8")
+    return [("Authorization", "Bearer %s" % encoded_jwt)]
 
 
 @pytest.fixture
@@ -211,6 +205,6 @@ def mock_get(monkeypatch, example_keys_response):
             mocked_response.json.return_value = urls_to_responses[url]
             return mocked_response
 
-        monkeypatch.setattr('requests.get', mock.MagicMock(side_effect=get))
+        monkeypatch.setattr("requests.get", mock.MagicMock(side_effect=get))
 
     return do_patch

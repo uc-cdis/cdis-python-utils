@@ -8,8 +8,6 @@ This class inspired by AWS4SigningKey from requests_aws4auth
 # http://opensource.org/licenses/MIT
 
 
-
-
 import hmac
 import hashlib
 from warnings import warn
@@ -41,8 +39,16 @@ class HMAC4SigningKey:
 
     """
 
-    def __init__(self, secret_key, service, prefix=None, postfix=None,
-                 region=None, date=None, store_secret_key=True):
+    def __init__(
+        self,
+        secret_key,
+        service,
+        prefix=None,
+        postfix=None,
+        region=None,
+        date=None,
+        store_secret_key=True,
+    ):
         """
         >>> HMAC4SigningKey(secret_key, service[, date]
         ...                [, store_secret_key])
@@ -82,13 +88,20 @@ class HMAC4SigningKey:
         self.service = service
         self.region = region
         self.prefix = prefix or "HMAC4"
-        self.postfix = postfix or 'hmac4_request'
-        self.short_date_stamp = date or datetime.utcnow().strftime(constants.ABRIDGED_DATE_TIME_FORMAT)
+        self.postfix = postfix or "hmac4_request"
+        self.short_date_stamp = date or datetime.utcnow().strftime(
+            constants.ABRIDGED_DATE_TIME_FORMAT
+        )
         self.store_secret_key = store_secret_key
         self.secret_key = secret_key if self.store_secret_key else None
-        self.key = self.generate_key(self.prefix, self.postfix,
-                                     self.secret_key, self.service,
-                                     self.short_date_stamp, self.region)
+        self.key = self.generate_key(
+            self.prefix,
+            self.postfix,
+            self.secret_key,
+            self.service,
+            self.short_date_stamp,
+            self.region,
+        )
 
     @classmethod
     def generate_key(cls, prefix, postfix, secret_key, service, date, region=None):
@@ -104,7 +117,7 @@ class HMAC4SigningKey:
         Amazon.
 
         """
-        init_key = (prefix + secret_key).encode('utf-8')
+        init_key = (prefix + secret_key).encode("utf-8")
         date_key = cls.sign_sha256(init_key, date)
         region_key = date_key if region is None else cls.sign_sha256(date_key, region)
         service_key = cls.sign_sha256(region_key, service)
@@ -122,12 +135,14 @@ class HMAC4SigningKey:
 
         """
         if isinstance(msg, text_type):
-            msg = msg.encode('utf-8')
+            msg = msg.encode("utf-8")
         return hmac.new(key, msg, hashlib.sha256).digest()
 
     @property
     def amz_date(self):
-        msg = ("This attribute has been renamed to 'date'. 'amz_date' is "
-               "deprecated and will be removed in a future version.")
+        msg = (
+            "This attribute has been renamed to 'date'. 'amz_date' is "
+            "deprecated and will be removed in a future version."
+        )
         warn(msg, DeprecationWarning)
         return self.short_date_stamp

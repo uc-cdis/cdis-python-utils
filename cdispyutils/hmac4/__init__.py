@@ -63,13 +63,26 @@ def verify_hmac(request, service, get_secret_key):
     return verify(service, request, secret_key)
 
 
-def generate_aws_presigned_url(url, method, cred, service, region,
-                               expires, additional_signed_qs):
+def generate_aws_presigned_url(
+    url, method, cred, service, region, expires, additional_signed_qs
+):
     request_date = datetime.datetime.utcnow()
-    session_token = cred.get('aws_session_token', None)
-    sig_key = HMAC4SigningKey(cred.get('aws_secret_access_key'), service, region=region,
-                              date=request_date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT),
-                              prefix='AWS4', postfix='aws4_request')
-    return generate_presigned_url(url, method, cred.get('aws_access_key_id'), sig_key,
-                                  request_date.strftime(constants.FULL_DATE_TIME_FORMAT),
-                                  expires, additional_signed_qs, session_token)
+    session_token = cred.get("aws_session_token", None)
+    sig_key = HMAC4SigningKey(
+        cred.get("aws_secret_access_key"),
+        service,
+        region=region,
+        date=request_date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT),
+        prefix="AWS4",
+        postfix="aws4_request",
+    )
+    return generate_presigned_url(
+        url,
+        method,
+        cred.get("aws_access_key_id"),
+        sig_key,
+        request_date.strftime(constants.FULL_DATE_TIME_FORMAT),
+        expires,
+        additional_signed_qs,
+        session_token,
+    )

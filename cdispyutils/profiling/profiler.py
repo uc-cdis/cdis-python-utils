@@ -24,7 +24,6 @@ def profile(category, *profiler_args, **profiler_kwargs):
     profiler = Profiler(name=_make_timestamp(), *profiler_args, **profiler_kwargs)
 
     def decorator(f):
-
         @functools.wraps(f)
         def wrapper(*f_args, **f_kwargs):
             return profiler.call(category, f, args=f_args, kwargs=f_kwargs)
@@ -79,8 +78,12 @@ class Profiler(object):
     """
 
     def __init__(
-        self, name=None, logger=None, enable=False, output_style="detailed",
-        directory="profile"
+        self,
+        name=None,
+        logger=None,
+        enable=False,
+        output_style="detailed",
+        directory="profile",
     ):
         name = name or _make_timestamp()
         self.directory = os.path.join(directory, name)
@@ -92,8 +95,9 @@ class Profiler(object):
             if not os.path.isdir(self.directory):
                 if os.path.isfile(self.directory):
                     raise EnvironmentError(
-                        "can't save profile output; file already exists: {}"
-                        .format(self.directory)
+                        "can't save profile output; file already exists: {}".format(
+                            self.directory
+                        )
                     )
                 os.makedirs(self.directory, mode=0o744)
             if self.logger:
@@ -145,8 +149,7 @@ class Profiler(object):
             profiler.disable()
             self._make_profile_category(category)
             filename = "{}-{}.prof".format(
-                function_name,
-                str(self._function_counts[category][function_name]),
+                function_name, str(self._function_counts[category][function_name])
             )
             path = os.path.join(self.directory, category, filename)
             profiler.dump_stats(path)
@@ -156,8 +159,7 @@ class Profiler(object):
             result = f(*args, **kwargs)
             execution_time = time.time() - start
             filename = "{}-{}.time".format(
-                function_name,
-                str(self._function_counts[category][function_name]),
+                function_name, str(self._function_counts[category][function_name])
             )
             path = os.path.join(self.directory, category, filename)
             # if the file exists already (say we gave the Profiler a directory that
@@ -166,8 +168,7 @@ class Profiler(object):
             while os.path.exists(path):
                 self._function_counts[category][function_name] += 1
                 filename = "{}-{}.prof".format(
-                    function_name,
-                    str(self._function_counts[category][function_name]),
+                    function_name, str(self._function_counts[category][function_name])
                 )
                 path = os.path.join(self.directory, category, filename)
             with open(path, "w") as output_file:

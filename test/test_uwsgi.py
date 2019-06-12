@@ -35,13 +35,13 @@ def test_user_harakiri_no_effect_on_normal_requests(mod_uwsgi, app):
 def test_user_harakiri_with_environ(mod_uwsgi, app):
     with app.test_client() as c:
         assert (
-                c.get(
-                    "/",
-                    environ_overrides=dict(
-                        GEN3_REQUEST_TIMESTAMP=time.time(), GEN3_TIMEOUT_SECONDS="10.9"
-                    ),
-                ).status_code
-                == 200
+            c.get(
+                "/",
+                environ_overrides=dict(
+                    GEN3_REQUEST_TIMESTAMP=time.time(), GEN3_TIMEOUT_SECONDS="10.9"
+                ),
+            ).status_code
+            == 200
         )
     assert mod_uwsgi.set_user_harakiri.call_args_list == [mock.call(10), mock.call(0)]
 

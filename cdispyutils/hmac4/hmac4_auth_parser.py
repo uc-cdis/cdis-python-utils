@@ -21,7 +21,11 @@ except ImportError:
 
 
 DEFAULT_INCLUDE_HEADERS = [
-    'Host', 'content-type', 'date', constants.REQUEST_HEADER_PREFIX + '*']
+    "Host",
+    "content-type",
+    "date",
+    constants.REQUEST_HEADER_PREFIX + "*",
+]
 
 
 def parse_access_key_and_signature(req):
@@ -30,22 +34,23 @@ def parse_access_key_and_signature(req):
     except Exception as ex:
         raise UnauthorizedError("No authentication provided!: {}".format(ex))
     try:
-        signature = re.match(r'.*Signature=(\S*)', authorization_header).group(1)
-        access_key = re.match(r'.*Credential=(\S*?)\/.*', authorization_header).group(1)
+        signature = re.match(r".*Signature=(\S*)", authorization_header).group(1)
+        access_key = re.match(r".*Credential=(\S*?)\/.*", authorization_header).group(1)
         return access_key, signature
     except Exception as ex:
-        raise UnauthorizedError("Authorization header incorrect: "
-                                "missing signature or credential in header!: {}".format(ex))
+        raise UnauthorizedError(
+            "Authorization header incorrect: "
+            "missing signature or credential in header!: {}".format(ex)
+        )
 
 
 def get_sign_string_from_req(req, service, include=None):
     scope = get_request_scope(req, service)
     # generate signature
     cano_headers, signed_headers = get_canonical_headers(req, include)
-    cano_req = get_canonical_request(
-        req, cano_headers, signed_headers)
+    cano_req = get_canonical_request(req, cano_headers, signed_headers)
     sig_string = get_sig_string(req, cano_req, scope)
-    return sig_string.encode('utf-8')
+    return sig_string.encode("utf-8")
 
 
 def get_sig_string(req, cano_req, scope):
@@ -61,7 +66,7 @@ def get_sig_string(req, cano_req, scope):
     req_date = req.headers[constants.REQUEST_DATE_HEADER]
     hsh = hashlib.sha256(cano_req.encode())
     sig_items = [constants.ALGORITHM, req_date, scope, hsh.hexdigest()]
-    sig_string = '\n'.join(sig_items)
+    sig_string = "\n".join(sig_items)
     return sig_string
 
 
@@ -69,7 +74,7 @@ def get_request_scope(req, service):
     date = get_request_date(req)
 
     date = date.strftime(constants.ABRIDGED_DATE_TIME_FORMAT)
-    return '{}/{}/{}'.format(date, service, constants.BIONIMBUS_REQUEST)
+    return "{}/{}/{}".format(date, service, constants.BIONIMBUS_REQUEST)
 
 
 def normalize_date_format(date_str):
@@ -87,35 +92,41 @@ def normalize_date_format(date_str):
     date_str -- Str containing a date and optional time
 
     """
-    months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug',
-              'sep', 'oct', 'nov', 'dec']
+    months = [
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "may",
+        "jun",
+        "jul",
+        "aug",
+        "sep",
+        "oct",
+        "nov",
+        "dec",
+    ]
     formats = {
         # RFC 7231, e.g. 'Mon, 09 Sep 2011 23:36:00 GMT'
-        r'^(?:\w{3}, )?(\d{2}) (\w{3}) (\d{4})\D.*$':
-            lambda m: '{}-{:02d}-{}'.format(
-                                      m.group(3),
-                                      months.index(m.group(2).lower())+1,
-                                      m.group(1)),
+        r"^(?:\w{3}, )?(\d{2}) (\w{3}) (\d{4})\D.*$": lambda m: "{}-{:02d}-{}".format(
+            m.group(3), months.index(m.group(2).lower()) + 1, m.group(1)
+        ),
         # RFC 850 (e.g. Sunday, 06-Nov-94 08:49:37 GMT)
         # assumes current century
-        r'^\w+day, (\d{2})-(\w{3})-(\d{2})\D.*$':
-            lambda m: '{}{}-{:02d}-{}'.format(
-                                        str(datetime.date.today().year)[:2],
-                                        m.group(3),
-                                        months.index(m.group(2).lower())+1,
-                                        m.group(1)),
+        r"^\w+day, (\d{2})-(\w{3})-(\d{2})\D.*$": lambda m: "{}{}-{:02d}-{}".format(
+            str(datetime.date.today().year)[:2],
+            m.group(3),
+            months.index(m.group(2).lower()) + 1,
+            m.group(1),
+        ),
         # C time, e.g. 'Wed Dec 4 00:00:00 2002'
-        r'^\w{3} (\w{3}) (\d{1,2}) \d{2}:\d{2}:\d{2} (\d{4})$':
-            lambda m: '{}-{:02d}-{:02d}'.format(
-                                          m.group(3),
-                                          months.index(m.group(1).lower())+1,
-                                          int(m.group(2))),
+        r"^\w{3} (\w{3}) (\d{1,2}) \d{2}:\d{2}:\d{2} (\d{4})$": lambda m: "{}-{:02d}-{:02d}".format(
+            m.group(3), months.index(m.group(1).lower()) + 1, int(m.group(2))
+        ),
         # x-amz-date format dates, e.g. 20100325T010101Z
-        r'^(\d{4})(\d{2})(\d{2})T\d{6}Z$':
-            lambda m: '{}-{}-{}'.format(*m.groups()),
+        r"^(\d{4})(\d{2})(\d{2})T\d{6}Z$": lambda m: "{}-{}-{}".format(*m.groups()),
         # ISO 8601 / RFC 3339, e.g. '2009-03-25T10:11:12.13-01:00'
-        r'^(\d{4}-\d{2}-\d{2})(?:[Tt].*)?$':
-            lambda m: m.group(1),
+        r"^(\d{4}-\d{2}-\d{2})(?:[Tt].*)?$": lambda m: m.group(1),
     }
 
     out_date = None
@@ -143,7 +154,7 @@ def get_request_date(req):
 
     """
     date = None
-    for header in [constants.REQUEST_DATE_HEADER, 'date']:
+    for header in [constants.REQUEST_DATE_HEADER, "date"]:
         if header not in req.headers:
             continue
         try:
@@ -151,7 +162,7 @@ def get_request_date(req):
         except DateFormatError:
             continue
         try:
-            date = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+            date = datetime.datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
             continue
         else:
@@ -177,17 +188,23 @@ def get_canonical_request(req, cano_headers, signed_headers):
 
     # The additional header 'Subdir' is used to resolve
     # the problem of the url changed in reversed proxy
-    if 'Subdir' in req.headers:
-        path = req.headers['Subdir'] + path
+    if "Subdir" in req.headers:
+        path = req.headers["Subdir"] + path
     # AWS handles "extreme" querystrings differently to urlparse
     # (see post-vanilla-query-nonunreserved test in aws_testsuite)
-    split = req.url.split('?', 1)
-    qs = split[1] if len(split) == 2 else ''
+    split = req.url.split("?", 1)
+    qs = split[1] if len(split) == 2 else ""
     qs = format_cano_querystring(qs)
     payload_hash = req.headers[constants.HASHED_REQUEST_CONTENT]
-    req_parts = [req.method.upper(), path, qs, cano_headers,
-                 signed_headers, payload_hash]
-    cano_req = '\n'.join(req_parts)
+    req_parts = [
+        req.method.upper(),
+        path,
+        qs,
+        cano_headers,
+        signed_headers,
+        payload_hash,
+    ]
+    cano_req = "\n".join(req_parts)
     return cano_req
 
 
@@ -216,7 +233,7 @@ def get_canonical_headers(req, include=None):
     # Temporarily include the host header - AWS requires it to be included
     # in the signed headers, but Requests doesn't include it in a
     # PreparedRequest
-    headers['Host'] = urlparse(req.url).netloc.split(':')[0]
+    headers["Host"] = urlparse(req.url).netloc.split(":")[0]
 
     # Aggregate for upper/lowercase header name collisions in header names,
     # AMZ requires values of colliding headers be concatenated into a
@@ -227,21 +244,26 @@ def get_canonical_headers(req, include=None):
     for hdr, val in list(headers.items()):
         hdr = hdr.strip().lower()
         val = normalize_whitespace(val).strip()
-        if (hdr in include or '*' in include or
-                ('x-amz-*' in include
-                 and hdr.startswith(constants.REQUEST_HEADER_PREFIX)
-                 and not hdr == constants.CLIENT_CONTEXT_HEADER)):
+        if (
+            hdr in include
+            or "*" in include
+            or (
+                "x-amz-*" in include
+                and hdr.startswith(constants.REQUEST_HEADER_PREFIX)
+                and not hdr == constants.CLIENT_CONTEXT_HEADER
+            )
+        ):
             vals = cano_headers_dict.setdefault(hdr, [])
             vals.append(val)
     # Flatten cano_headers dict to string and generate signed_headers
-    cano_headers = ''
+    cano_headers = ""
     signed_headers_list = []
     for hdr in sorted(cano_headers_dict):
         vals = cano_headers_dict[hdr]
-        val = ','.join(sorted(vals))
-        cano_headers += '{}:{}\n'.format(hdr, val)
+        val = ",".join(sorted(vals))
+        cano_headers += "{}:{}\n".format(hdr, val)
         signed_headers_list.append(hdr)
-    signed_headers = ';'.join(signed_headers_list)
+    signed_headers = ";".join(signed_headers_list)
     return (cano_headers, signed_headers)
 
 
@@ -255,29 +277,29 @@ def format_cano_path(path):
     path -- request path
 
     """
-    safe_chars = '/~'
-    qs = ''
+    safe_chars = "/~"
+    qs = ""
     fixed_path = path
-    if '?' in fixed_path:
-        fixed_path, qs = fixed_path.split('?', 1)
+    if "?" in fixed_path:
+        fixed_path, qs = fixed_path.split("?", 1)
     fixed_path = posixpath.normpath(fixed_path)
-    fixed_path = re.sub('/+', '/', fixed_path)
-    if path.endswith('/') and not fixed_path.endswith('/'):
-        fixed_path += '/'
+    fixed_path = re.sub("/+", "/", fixed_path)
+    if path.endswith("/") and not fixed_path.endswith("/"):
+        fixed_path += "/"
     full_path = fixed_path
     # If Python 2, switch to working entirely in str as quote() has problems
     # with Unicode
     if PY2:
-        full_path = full_path.encode('utf-8')
-        safe_chars = safe_chars.encode('utf-8')
-        qs = qs.encode('utf-8')
+        full_path = full_path.encode("utf-8")
+        safe_chars = safe_chars.encode("utf-8")
+        qs = qs.encode("utf-8")
     # S3 seems to require unquoting first. 'host' service is used in
     # amz_testsuite tests
     # if self.service in ['s3', 'host']:
     #     full_path = unquote(full_path)
     full_path = quote(full_path, safe=safe_chars)
     if qs:
-        qm = b'?' if PY2 else '?'
+        qm = b"?" if PY2 else "?"
         full_path = qm.join((full_path, qs))
     if PY2:
         full_path = str(full_path)
@@ -293,16 +315,16 @@ def format_cano_querystring(qs):
     qs -- querystring
 
     """
-    safe_qs_amz_chars = '&=+'
-    safe_qs_unresvd = '-_.~'
+    safe_qs_amz_chars = "&=+"
+    safe_qs_unresvd = "-_.~"
     # If Python 2, switch to working entirely in str
     # as quote() has problems with Unicode
     if PY2:
-        qs = qs.encode('utf-8')
+        qs = qs.encode("utf-8")
         safe_qs_amz_chars = safe_qs_amz_chars.encode()
         safe_qs_unresvd = safe_qs_unresvd.encode()
     qs = unquote(qs)
-    space = b' ' if PY2 else ' '
+    space = b" " if PY2 else " "
     qs = qs.split(space)[0]
     qs = quote(qs, safe=safe_qs_amz_chars)
     qs_items = {}
@@ -313,8 +335,8 @@ def format_cano_querystring(qs):
     qs_strings = []
     for name, vals in list(qs_items.items()):
         for val in vals:
-            qs_strings.append('='.join([name, val]))
-    qs = '&'.join(sorted(qs_strings))
+            qs_strings.append("=".join([name, val]))
+    qs = "&".join(sorted(qs_strings))
     if PY2:
         qs = str(qs)
     return qs
@@ -327,7 +349,7 @@ def normalize_whitespace(text):
     Ignore text enclosed in quotes.
 
     """
-    return ' '.join(shlex.split(text, posix=False))
+    return " ".join(shlex.split(text, posix=False))
 
 
 def parse_service(req):

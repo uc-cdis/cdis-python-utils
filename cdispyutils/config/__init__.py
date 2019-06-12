@@ -24,5 +24,5 @@ def get_value(dictionary, key, ex=None):
         if ex is not None:
             raise ex
         else:
-            raise NotFoundError('{} is missing'.format(key))
+            raise NotFoundError("{} is missing".format(key))
     return res

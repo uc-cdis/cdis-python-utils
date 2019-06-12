@@ -10,7 +10,6 @@ import numpy as np
 
 
 class StatsCollection(object):
-
     def __init__(self, directory, logger=None):
         self.stats = {}
 
@@ -129,7 +128,7 @@ class ProfilePlotter(object):
                     for run, times in data.items():
                         if len(times) > 1:
                             axes.scatter(
-                                len(times) * [run], times, s=3, c='C1', zorder=10,
+                                len(times) * [run], times, s=3, c="C1", zorder=10
                             )
                             errorbar_x.append(run)
                             errorbar_y.append(np.mean(times))
@@ -138,11 +137,13 @@ class ProfilePlotter(object):
                             scatter_x.append(run)
                             scatter_y.append(times[0])
 
-                    axes.scatter(scatter_x, scatter_y, c='C0')
+                    axes.scatter(scatter_x, scatter_y, c="C0")
                     axes.errorbar(
-                        errorbar_x, errorbar_y, yerr=errorbar_dy, fmt='oC0', capsize=4,
+                        errorbar_x, errorbar_y, yerr=errorbar_dy, fmt="oC0", capsize=4
                     )
-                    plt.setp(axes.get_xticklabels(), rotation=45, horizontalalignment='right')
+                    plt.setp(
+                        axes.get_xticklabels(), rotation=45, horizontalalignment="right"
+                    )
 
                     pdf.savefig(figure, bbox_inches="tight")
 
