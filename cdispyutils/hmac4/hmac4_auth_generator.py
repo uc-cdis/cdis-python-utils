@@ -65,6 +65,10 @@ def create_authentication_headers(
 
 
 def generate_signature(secret_key, sig_string):
+    if isinstance(secret_key, str):
+        secret_key = bytes(secret_key, 'latin-1')
+    if isinstance(sig_string, str):
+        sig_string = bytes(sig_string, 'latin-1')
     hsh = hmac.new(secret_key, sig_string, hashlib.sha256)
     sig = hsh.hexdigest()
     return sig
@@ -125,7 +129,7 @@ def generate_presigned_url(url, method, access_key, signing_key, request_date, e
     )
     string_to_sign = '\n'.join(
         [constants.AWS_ALGORITHM, request_date,
-         credential_scope, hashlib.sha256(canonical_request).hexdigest()]
+         credential_scope, hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()]
     )
     signature = generate_signature(signing_key.key, string_to_sign)
     return url + '?' + canonical_qs + '&' + constants.AWS_SIGNATURE_KEY + '=' + signature
