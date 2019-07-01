@@ -27,7 +27,6 @@ setup(
         "cryptography~=2.1",
         "PyJWT~=1.5",
         "requests~=2.5",
-        "six~=1.11",
         "cdiserrors~=0.1",
         "Flask",
     ],

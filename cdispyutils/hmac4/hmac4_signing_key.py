@@ -12,7 +12,6 @@ import hmac
 import hashlib
 from warnings import warn
 from datetime import datetime
-from six import text_type
 from .. import constants
 
 
@@ -134,7 +133,7 @@ class HMAC4SigningKey:
         msg -- message to sign. unicode or bytes.
 
         """
-        if isinstance(msg, text_type):
+        if isinstance(msg, str):
             msg = msg.encode("utf-8")
         return hmac.new(key, msg, hashlib.sha256).digest()
 

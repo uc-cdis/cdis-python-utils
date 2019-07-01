@@ -2,7 +2,6 @@ import hashlib
 import cdispyutils.constants as constants
 from . import hmac4_auth_parser as hmac4_parser
 import hmac
-from six import text_type
 from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
 
 
@@ -35,7 +34,7 @@ def encode_body(req):
     req -- Requests PreparedRequest object
 
     """
-    if isinstance(req.body, text_type):
+    if isinstance(req.body, str):
         split = req.headers.get("content-type", "text/plain").split(";")
         if len(split) == 2:
             ct, cs = split

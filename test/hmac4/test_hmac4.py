@@ -10,7 +10,6 @@ from cdispyutils.hmac4.hmac4_auth import HMAC4Auth
 from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
 from cdispyutils.hmac4.hmac4_auth_generator import encode_body
 from cdispyutils.hmac4 import generate_aws_presigned_url
-from six import PY2
 from urllib.parse import urlparse, quote_plus
 
 import requests
@@ -102,8 +101,7 @@ def test_generate_key():
     key = HMAC4SigningKey.generate_key(
         "HMAC4", "hmac4_request", secret_key, service, date
     )
-    key = [ord(x) for x in key] if PY2 else list(key)
-    assert key == expected
+    assert list(key) == expected
 
 
 def test_instantiation_generate_key():
@@ -152,8 +150,7 @@ def test_instantiation_generate_key():
     sig_key = HMAC4SigningKey(
         secret_key, service, prefix="HMAC4", postfix="hmac4_request", date=date
     )
-    key = [ord(x) for x in sig_key.key] if PY2 else list(sig_key.key)
-    assert key == expected
+    assert list(sig_key.key) == expected
 
 
 def test_generate_signature():
