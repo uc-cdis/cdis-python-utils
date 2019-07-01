@@ -3,12 +3,7 @@ import cdispyutils.constants as constants
 from . import hmac4_auth_parser as hmac4_parser
 import hmac
 from six import text_type
-
-try:
-    from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
-except ImportError:
-    from urllib.parse import urlparse, parse_qs
-    from urllib.parse import quote, unquote, quote_plus
+from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
 
 
 def set_req_date(req, req_date):

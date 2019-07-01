@@ -11,12 +11,7 @@ from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
 from cdispyutils.hmac4.hmac4_auth_generator import encode_body
 from cdispyutils.hmac4 import generate_aws_presigned_url
 from six import PY2
-
-try:
-    from urllib.parse import urlparse, quote_plus
-except ImportError:
-    from urllib.parse import urlparse
-    from urllib.parse import quote_plus
+from urllib.parse import urlparse, quote_plus
 
 import requests
 from test.mock_datetime import mock_datetime

@@ -11,13 +11,7 @@ import copy
 
 
 from .error import DateFormatError, UnauthorizedError
-from six import PY2
-
-try:
-    from urllib.parse import urlparse, parse_qs, quote, unquote
-except ImportError:
-    from urllib.parse import urlparse, parse_qs
-    from urllib.parse import quote, unquote
+from urllib.parse import urlparse, parse_qs, quote, unquote
 
 
 DEFAULT_INCLUDE_HEADERS = [
@@ -287,22 +281,13 @@ def format_cano_path(path):
     if path.endswith("/") and not fixed_path.endswith("/"):
         fixed_path += "/"
     full_path = fixed_path
-    # If Python 2, switch to working entirely in str as quote() has problems
-    # with Unicode
-    if PY2:
-        full_path = full_path.encode("utf-8")
-        safe_chars = safe_chars.encode("utf-8")
-        qs = qs.encode("utf-8")
     # S3 seems to require unquoting first. 'host' service is used in
     # amz_testsuite tests
     # if self.service in ['s3', 'host']:
     #     full_path = unquote(full_path)
     full_path = quote(full_path, safe=safe_chars)
     if qs:
-        qm = b"?" if PY2 else "?"
-        full_path = qm.join((full_path, qs))
-    if PY2:
-        full_path = str(full_path)
+        full_path = "?".join((full_path, qs))
     return full_path
 
 
@@ -317,15 +302,8 @@ def format_cano_querystring(qs):
     """
     safe_qs_amz_chars = "&=+"
     safe_qs_unresvd = "-_.~"
-    # If Python 2, switch to working entirely in str
-    # as quote() has problems with Unicode
-    if PY2:
-        qs = qs.encode("utf-8")
-        safe_qs_amz_chars = safe_qs_amz_chars.encode()
-        safe_qs_unresvd = safe_qs_unresvd.encode()
     qs = unquote(qs)
-    space = b" " if PY2 else " "
-    qs = qs.split(space)[0]
+    qs = qs.split(" ")[0]
     qs = quote(qs, safe=safe_qs_amz_chars)
     qs_items = {}
     for name, vals in list(parse_qs(qs, keep_blank_values=True).items()):
@@ -337,8 +315,6 @@ def format_cano_querystring(qs):
         for val in vals:
             qs_strings.append("=".join([name, val]))
     qs = "&".join(sorted(qs_strings))
-    if PY2:
-        qs = str(qs)
     return qs
 
 
