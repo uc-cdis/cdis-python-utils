@@ -41,7 +41,7 @@ def request_from_text(text):
         hdr = hdr.lower()
         vals = headers.setdefault(hdr, [])
         vals.append(val)
-    headers = {hdr: ",".join(sorted(vals)) for hdr, vals in list(headers.items())}
+    headers = {hdr: ",".join(sorted(vals)) for hdr, vals in headers.items()}
     check_url = urlparse(path)
     if check_url.scheme and check_url.netloc:
         # absolute URL in path

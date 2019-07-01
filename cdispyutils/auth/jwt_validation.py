@@ -120,7 +120,7 @@ def get_public_key_for_kid(kid, attempt_refresh=True):
             raise JWTValidationError("no key exists with this key id")
     else:
         # Grab the key from the first in the list of keys.
-        return list(flask.current_app.jwt_public_keys.items())[0][1]
+        return next(iter(flask.current_app.jwt_public_keys.items()))[1]
 
 
 def validate_request_jwt(aud, request=None, user_api=None, attempt_refresh=True):

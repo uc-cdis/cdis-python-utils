@@ -63,9 +63,9 @@ def create_authentication_headers(access_key, scope, signed_headers, signature):
 
 def generate_signature(secret_key, sig_string):
     if isinstance(secret_key, str):
-        secret_key = bytes(secret_key, "latin-1")
+        secret_key = bytes(secret_key, "utf-8")
     if isinstance(sig_string, str):
-        sig_string = bytes(sig_string, "latin-1")
+        sig_string = bytes(sig_string, "utf-8")
     hsh = hmac.new(secret_key, sig_string, hashlib.sha256)
     sig = hsh.hexdigest()
     return sig
