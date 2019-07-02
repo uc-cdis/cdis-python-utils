@@ -24,6 +24,6 @@ def mock_datetime(target, datetime_module):
             return target
 
     # Python2 & Python3-compatible metaclass
-    mocked_datetime = DatetimeSubclassMeta('datetime', (BaseMockedDatetime,), {})
+    mocked_datetime = DatetimeSubclassMeta("datetime", (BaseMockedDatetime,), {})
 
-    return mock.patch.object(datetime_module, 'datetime', mocked_datetime)
+    return mock.patch.object(datetime_module, "datetime", mocked_datetime)

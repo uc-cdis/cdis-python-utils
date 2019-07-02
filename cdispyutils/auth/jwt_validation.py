@@ -19,10 +19,7 @@ import flask
 import jwt
 import requests
 
-from .errors import (
-    JWTValidationError,
-    JWTAudienceError,
-)
+from .errors import JWTValidationError, JWTAudienceError
 
 
 def refresh_jwt_public_keys(user_api=None):
@@ -65,14 +62,13 @@ def refresh_jwt_public_keys(user_api=None):
     Raises:
         ValueError: if user_api is not provided or set in app config
     """
-    user_api = user_api or flask.current_app.config.get('USER_API')
+    user_api = user_api or flask.current_app.config.get("USER_API")
     if not user_api:
-        raise ValueError('no URL provided for user API')
-    path = '/'.join(path.strip('/') for path in [user_api, 'jwt', 'keys'])
-    jwt_public_keys = requests.get(path).json()['keys']
+        raise ValueError("no URL provided for user API")
+    path = "/".join(path.strip("/") for path in [user_api, "jwt", "keys"])
+    jwt_public_keys = requests.get(path).json()["keys"]
     flask.current_app.logger.info(
-        'refreshing public keys; updated to:\n'
-        + json.dumps(jwt_public_keys, indent=4)
+        "refreshing public keys; updated to:\n" + json.dumps(jwt_public_keys, indent=4)
     )
     flask.current_app.jwt_public_keys = OrderedDict(jwt_public_keys)
 
@@ -112,9 +108,8 @@ def get_public_key_for_kid(kid, attempt_refresh=True):
         JWTValidationError:
             if the key id is provided and public key with that key id is found
     """
-    need_refresh = (
-        not hasattr(flask.current_app, 'jwt_public_keys')
-        or (kid and kid not in flask.current_app.jwt_public_keys)
+    need_refresh = not hasattr(flask.current_app, "jwt_public_keys") or (
+        kid and kid not in flask.current_app.jwt_public_keys
     )
     if need_refresh and attempt_refresh:
         refresh_jwt_public_keys()
@@ -122,14 +117,13 @@ def get_public_key_for_kid(kid, attempt_refresh=True):
         try:
             return flask.current_app.jwt_public_keys[kid]
         except KeyError:
-            raise JWTValidationError('no key exists with this key id')
+            raise JWTValidationError("no key exists with this key id")
     else:
         # Grab the key from the first in the list of keys.
-        return flask.current_app.jwt_public_keys.items()[0][1]
+        return next(iter(flask.current_app.jwt_public_keys.items()))[1]
 
 
-def validate_request_jwt(
-        aud, request=None, user_api=None, attempt_refresh=True):
+def validate_request_jwt(aud, request=None, user_api=None, attempt_refresh=True):
     """
     Verify the JWT authorization header from a Flask request.
 
@@ -167,30 +161,28 @@ def validate_request_jwt(
             - from ``validate_jwt``, if any step of the validation fails
     """
 
-
     aud = set(aud)
-    iss = user_api or flask.current_app.config['USER_API']
+    iss = user_api or flask.current_app.config["USER_API"]
     if not aud:
-        raise JWTAudienceError('no audiences provided')
+        raise JWTAudienceError("no audiences provided")
     request = request or flask.request
     try:
-        encoded_token = request.headers['Authorization'].split(' ')[1]
+        encoded_token = request.headers["Authorization"].split(" ")[1]
     except IndexError:
-        raise JWTValidationError('could not parse authorization header')
+        raise JWTValidationError("could not parse authorization header")
     except KeyError:
-        raise JWTValidationError('no authorization token provided')
+        raise JWTValidationError("no authorization token provided")
 
     try:
         token_headers = jwt.get_unverified_header(encoded_token)
     except jwt.DecodeError as e:
-        raise JWTValidationError('invalid user token')
+        raise JWTValidationError("invalid user token")
 
     public_key = get_public_key_for_kid(
-        token_headers.get('kid'), attempt_refresh=attempt_refresh
+        token_headers.get("kid"), attempt_refresh=attempt_refresh
     )
 
     return validate_jwt(encoded_token, public_key, aud, iss)
-
 
 
 def require_jwt(aud):
@@ -204,6 +196,7 @@ def require_jwt(aud):
     Return:
         Callable[[Any], Any]: decorated function
     """
+
     def decorator(f):
         """
         Define the actual decorator, which takes the decorated function as an
@@ -215,12 +208,15 @@ def require_jwt(aud):
         Return:
             Callable[[Any], Any]: the same type as the function
         """
+
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             """Validate the JWT and call the actual function here."""
             validate_request_jwt(aud)
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -256,8 +252,7 @@ def validate_jwt(encoded_token, public_key, aud, iss):
     random_aud = list(aud)[0]
     try:
         token = jwt.decode(
-            encoded_token, key=public_key, algorithms=['RS256'],
-            audience=random_aud
+            encoded_token, key=public_key, algorithms=["RS256"], audience=random_aud
         )
     except jwt.InvalidTokenError as e:
         raise JWTValidationError(e)
@@ -267,16 +262,16 @@ def validate_jwt(encoded_token, public_key, aud, iss):
 
     # iss
     # Check that the issuer of the token is the `USER_API` of the current app.
-    if token['iss'] != iss:
-        msg = 'invalid issuer {}; expected {}'.format(token['iss'], iss)
+    if token["iss"] != iss:
+        msg = "invalid issuer {}; expected {}".format(token["iss"], iss)
         raise JWTValidationError(msg)
 
     # aud
     # The audiences listed in the token must completely satisfy all the
     # required audiences provided. Note that this is stricter than the
     # specification suggested in RFC 7519.
-    missing = aud - set(token['aud'])
+    missing = aud - set(token["aud"])
     if missing:
-        raise JWTAudienceError('missing audiences: ' + str(missing))
+        raise JWTAudienceError("missing audiences: " + str(missing))
 
     return token

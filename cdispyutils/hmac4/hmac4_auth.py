@@ -22,8 +22,7 @@ class HMAC4Auth(AuthBase):
     >>> response = requests.get(endpoint, auth=auth)
     """
 
-    def __init__(self, access_key, signing_key,
-                 raise_invalid_date=False):
+    def __init__(self, access_key, signing_key, raise_invalid_date=False):
         """
         HMAC4Auth instances can be created by supplying key scope parameters
         directly or by using an AWS4SigningKey instance:
@@ -59,12 +58,19 @@ class HMAC4Auth(AuthBase):
         if raise_invalid_date in [True, False]:
             self.raise_invalid_date = raise_invalid_date
         else:
-            raise ValueError('raise_invalid_date must be True or False in AWS4Auth.__init__()')
+            raise ValueError(
+                "raise_invalid_date must be True or False in AWS4Auth.__init__()"
+            )
 
         super(HMAC4Auth, self).__init__()
 
     def __call__(self, req):
-        req = sign_request(req, self.access_key, self.signing_key, self.service,
-                           datetime.datetime.utcnow().strftime(constants.FULL_DATE_TIME_FORMAT))
-        
+        req = sign_request(
+            req,
+            self.access_key,
+            self.signing_key,
+            self.service,
+            datetime.datetime.utcnow().strftime(constants.FULL_DATE_TIME_FORMAT),
+        )
+
         return req

@@ -10,7 +10,6 @@ import numpy as np
 
 
 class StatsCollection(object):
-
     def __init__(self, directory, logger=None):
         self.stats = {}
 
@@ -34,7 +33,7 @@ class StatsCollection(object):
             here = reduce(lambda acc, p: acc.get(p, {}), split[:-1], self.stats)
             # add entry to the stats dictionary
             here[split[-1]] = {f: load_file(os.path.join(path, f)) for f in files}
-            here[split[-1]] = {f: stat for f, stat in here[split[-1]].iteritems() if stat}
+            here[split[-1]] = {f: stat for f, stat in here[split[-1]].items() if stat}
 
         if corrupted:
             msg = (
@@ -95,8 +94,8 @@ class ProfilePlotter(object):
         points are the run name as the x and the result time as the y.
         """
         results = {}
-        for run, categories in self.stats.stats.iteritems():
-            for category, files in categories.iteritems():
+        for run, categories in self.stats.stats.items():
+            for category, files in categories.items():
                 if category not in results:
                     results[category] = {}
                 aggregator = (
@@ -104,7 +103,7 @@ class ProfilePlotter(object):
                     if category == "wsgi"
                     else _aggregate_profiler_filename
                 )
-                for filename, times in _aggregate_results(files, aggregator).iteritems():
+                for filename, times in _aggregate_results(files, aggregator).items():
                     if filename not in results[category]:
                         results[category][filename] = {}
                     if run not in results[category][filename]:
@@ -112,8 +111,8 @@ class ProfilePlotter(object):
                     results[category][filename][run].extend(times)
 
         with PdfPages(save_file) as pdf:
-            for category, profiles in results.iteritems():
-                for profile, data in profiles.iteritems():
+            for category, profiles in results.items():
+                for profile, data in profiles.items():
                     figure = plt.figure()
                     figure.suptitle("{}: {}".format(category, profile), fontsize=16)
                     axes = figure.subplots()
@@ -126,10 +125,10 @@ class ProfilePlotter(object):
                     errorbar_x = []
                     errorbar_y = []
                     errorbar_dy = []
-                    for run, times in data.iteritems():
+                    for run, times in data.items():
                         if len(times) > 1:
                             axes.scatter(
-                                len(times) * [run], times, s=3, c='C1', zorder=10,
+                                len(times) * [run], times, s=3, c="C1", zorder=10
                             )
                             errorbar_x.append(run)
                             errorbar_y.append(np.mean(times))
@@ -138,11 +137,13 @@ class ProfilePlotter(object):
                             scatter_x.append(run)
                             scatter_y.append(times[0])
 
-                    axes.scatter(scatter_x, scatter_y, c='C0')
+                    axes.scatter(scatter_x, scatter_y, c="C0")
                     axes.errorbar(
-                        errorbar_x, errorbar_y, yerr=errorbar_dy, fmt='oC0', capsize=4,
+                        errorbar_x, errorbar_y, yerr=errorbar_dy, fmt="oC0", capsize=4
                     )
-                    plt.setp(axes.get_xticklabels(), rotation=45, horizontalalignment='right')
+                    plt.setp(
+                        axes.get_xticklabels(), rotation=45, horizontalalignment="right"
+                    )
 
                     pdf.savefig(figure, bbox_inches="tight")
 
@@ -219,7 +220,7 @@ def _aggregate_results(file_stats, f_aggregate):
         {"GET.root.prof": [0.003, 0.002, 0.003, 0.003], "GET._status.prof": [0.019]}
     """
     results = {}
-    for filename, stat in file_stats.iteritems():
+    for filename, stat in file_stats.items():
         filename = f_aggregate(filename)
         if filename not in results:
             results[filename] = []
