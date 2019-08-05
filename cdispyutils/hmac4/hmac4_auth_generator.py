@@ -157,6 +157,11 @@ def generate_presigned_url(
         ]
     )
     signature = generate_signature(signing_key.key, string_to_sign)
+
+    # escape special characters _after_ generating the signature, to match the
+    # signature the provider generated using the non-escaped file name
+    url = "://".join([quote(e) for e in url_parts])
+
     return (
         url + "?" + canonical_qs + "&" + constants.AWS_SIGNATURE_KEY + "=" + signature
     )

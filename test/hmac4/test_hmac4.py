@@ -10,7 +10,7 @@ from cdispyutils.hmac4.hmac4_auth import HMAC4Auth
 from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
 from cdispyutils.hmac4.hmac4_auth_generator import encode_body
 from cdispyutils.hmac4 import generate_aws_presigned_url
-from urllib.parse import urlparse, quote_plus
+from urllib.parse import urlparse, quote_plus, quote
 
 import requests
 from test.mock_datetime import mock_datetime
@@ -243,7 +243,7 @@ def test_generate_presigned_url_escaped():
         )
 
     expected = (
-        "https://s3.amazonaws.com/dummy/P0001_T1/[test];.tar.gz"
+        "https://{}".format(quote("s3.amazonaws.com/dummy/P0001_T1/[test];.tar.gz")) +
         "?X-Amz-Algorithm=AWS4-HMAC-SHA256"
         "&X-Amz-Credential=AKIDEXAMPLE%2F19990219%2Fus-east-1%2Fs3%2Faws4_request"
         "&X-Amz-Date=19990219T000000Z"
