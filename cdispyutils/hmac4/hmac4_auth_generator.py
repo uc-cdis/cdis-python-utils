@@ -134,6 +134,10 @@ def generate_presigned_url(
         canonical_qs += "&" + key + "=" + quote_plus(additional_signed_qs[key])
 
     url_parts = url.split("://")
+    encoded_url = "://".join([quote(e) for e in url_parts])
+
+    # generate the signature using the non-escaped URL, to match the
+    # signature the provider generates using the non-escaped file name
     host_parts = url_parts[1].split("/")
     canonical_uri = quote(
         "/" + "/".join(host_parts[1:]) if len(host_parts) > 1 else "/"
@@ -157,6 +161,13 @@ def generate_presigned_url(
         ]
     )
     signature = generate_signature(signing_key.key, string_to_sign)
+
     return (
-        url + "?" + canonical_qs + "&" + constants.AWS_SIGNATURE_KEY + "=" + signature
+        encoded_url
+        + "?"
+        + canonical_qs
+        + "&"
+        + constants.AWS_SIGNATURE_KEY
+        + "="
+        + signature
     )

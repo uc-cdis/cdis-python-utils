@@ -10,7 +10,7 @@ from cdispyutils.hmac4.hmac4_auth import HMAC4Auth
 from cdispyutils.hmac4.hmac4_signing_key import HMAC4SigningKey
 from cdispyutils.hmac4.hmac4_auth_generator import encode_body
 from cdispyutils.hmac4 import generate_aws_presigned_url
-from urllib.parse import urlparse, quote_plus
+from urllib.parse import urlparse, quote_plus, quote
 
 import requests
 from test.mock_datetime import mock_datetime
@@ -229,7 +229,7 @@ def test_generate_presigned_url_escaped():
         "aws_access_key_id": "AKIDEXAMPLE",
         "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
     }
-    url = "https://s3.amazonaws.com/dummy/P0001_T1/[test];.tar.gz"
+    url = "https://s3.amazonaws.com/dummy/P0001_T1/[test]; .tar.gz"
     date = datetime.date(1999, 2, 19)
     with mock_datetime(date, datetime):
         presigned_url = generate_aws_presigned_url(
@@ -243,14 +243,14 @@ def test_generate_presigned_url_escaped():
         )
 
     expected = (
-        "https://s3.amazonaws.com/dummy/P0001_T1/[test];.tar.gz"
-        "?X-Amz-Algorithm=AWS4-HMAC-SHA256"
+        "https://{}".format(quote("s3.amazonaws.com/dummy/P0001_T1/[test]; .tar.gz"))
+        + "?X-Amz-Algorithm=AWS4-HMAC-SHA256"
         "&X-Amz-Credential=AKIDEXAMPLE%2F19990219%2Fus-east-1%2Fs3%2Faws4_request"
         "&X-Amz-Date=19990219T000000Z"
         "&X-Amz-Expires=86400"
         "&X-Amz-SignedHeaders=host"
         "&user-id=value2"
         "&username=value1%40gmail.com"
-        "&X-Amz-Signature=ac6cccd961fe338bc927ec31c977b03d630eb2f9b1bc3a1f3fa4d0acb4b5eb1f"
+        "&X-Amz-Signature=ad46ace7fb67bf21f6bda544711c04dea3942c38da3099f037e441b6bdcc12b1"
     )
     assert presigned_url == expected
