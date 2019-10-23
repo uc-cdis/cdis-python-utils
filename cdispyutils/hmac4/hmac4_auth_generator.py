@@ -131,7 +131,7 @@ def generate_presigned_url(
         canonical_qs += "&" + key + "=" + querystring[key]
     canonical_qs = canonical_qs[1:]
     for key in sorted(additional_signed_qs.keys()):
-        canonical_qs += "&" + key + "=" + quote_plus(additional_signed_qs[key])
+        canonical_qs += "&" + key + "=" + quote(additional_signed_qs[key])
 
     url_parts = url.split("://")
     encoded_url = "://".join([quote(e) for e in url_parts])
