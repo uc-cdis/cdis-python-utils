@@ -2,7 +2,7 @@ import hashlib
 import cdispyutils.constants as constants
 from . import hmac4_auth_parser as hmac4_parser
 import hmac
-from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
+from urllib.parse import urlparse, parse_qs, quote, unquote
 
 
 def set_req_date(req, req_date):
