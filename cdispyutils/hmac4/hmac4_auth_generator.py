@@ -118,12 +118,12 @@ def generate_presigned_url(
     querystring = {}
     querystring[constants.AWS_ALGORITHM_KEY] = constants.AWS_ALGORITHM
     querystring[constants.AWS_CREDENTIAL_KEY] = quote(
-        "/".join([access_key, credential_scope])
+        "/".join([access_key, credential_scope]), safe=""
     )
     querystring[constants.AWS_DATE_KEY] = request_date
     querystring[constants.AWS_EXPIRES_KEY] = str(expires)
     if session_token:
-        querystring["X-Amz-Security-Token"] = quote(session_token)
+        querystring["X-Amz-Security-Token"] = quote(session_token, safe="")
     querystring[constants.AWS_SIGNED_HEADERS_KEY] = "host"
 
     canonical_qs = ""
@@ -131,7 +131,7 @@ def generate_presigned_url(
         canonical_qs += "&" + key + "=" + querystring[key]
     canonical_qs = canonical_qs[1:]
     for key in sorted(additional_signed_qs.keys()):
-        canonical_qs += "&" + key + "=" + quote(additional_signed_qs[key])
+        canonical_qs += "&" + key + "=" + quote(additional_signed_qs[key], safe="")
 
     url_parts = url.split("://")
     encoded_url = "://".join([quote(e) for e in url_parts])
