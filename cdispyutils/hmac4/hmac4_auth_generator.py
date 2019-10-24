@@ -2,7 +2,7 @@ import hashlib
 import cdispyutils.constants as constants
 from . import hmac4_auth_parser as hmac4_parser
 import hmac
-from urllib.parse import urlparse, parse_qs, quote, unquote, quote_plus
+from urllib.parse import urlparse, parse_qs, quote, unquote
 
 
 def set_req_date(req, req_date):
@@ -117,13 +117,13 @@ def generate_presigned_url(
 
     querystring = {}
     querystring[constants.AWS_ALGORITHM_KEY] = constants.AWS_ALGORITHM
-    querystring[constants.AWS_CREDENTIAL_KEY] = quote_plus(
-        "/".join([access_key, credential_scope])
+    querystring[constants.AWS_CREDENTIAL_KEY] = quote(
+        "/".join([access_key, credential_scope]), safe=""
     )
     querystring[constants.AWS_DATE_KEY] = request_date
     querystring[constants.AWS_EXPIRES_KEY] = str(expires)
     if session_token:
-        querystring["X-Amz-Security-Token"] = quote_plus(session_token)
+        querystring["X-Amz-Security-Token"] = quote(session_token, safe="")
     querystring[constants.AWS_SIGNED_HEADERS_KEY] = "host"
 
     canonical_qs = ""
@@ -131,7 +131,7 @@ def generate_presigned_url(
         canonical_qs += "&" + key + "=" + querystring[key]
     canonical_qs = canonical_qs[1:]
     for key in sorted(additional_signed_qs.keys()):
-        canonical_qs += "&" + key + "=" + quote_plus(additional_signed_qs[key])
+        canonical_qs += "&" + key + "=" + quote(additional_signed_qs[key], safe="")
 
     url_parts = url.split("://")
     encoded_url = "://".join([quote(e) for e in url_parts])
