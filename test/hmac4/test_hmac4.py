@@ -30,7 +30,7 @@ def request_from_text(text):
 
     """
     lines = text.splitlines()
-    match = re.search("^([a-z]+) (.*) (http/[0-9]\.[0-9])$", lines[0], re.I)
+    match = re.search(r"^([a-z]+) (.*) (http/[0-9]\.[0-9])$", lines[0], re.I)
     method, path, version = match.groups()
     headers = {}
     for idx, line in enumerate(lines[1:], start=1):
@@ -193,7 +193,7 @@ def test_generate_presigned_url():
     cred = {
         "aws_access_key_id": "AKIDEXAMPLE",
         "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
-        "aws_session_token": "FQoDYXdzEPv//////////wEaDD/RcZIzhOP3tz1Ut7NW7jud8VV53T59A2TNO2ZXkt",
+        "aws_session_token": "FQoDYXdzEPv//////////wEaDD/RcZIzhOP3tz1Ut7N W7jud8VV53T59A2TNO2ZXkt",
     }
     url = "https://s3.amazonaws.com/cdis-presigned-url-test/testdata"
     date = datetime.date(2018, 2, 19)
@@ -217,8 +217,8 @@ def test_generate_presigned_url():
         "&X-Amz-SignedHeaders=host"
         "&user-id=value2"
         "&username=value1%40gmail.com"
-        "&X-Amz-Signature=89af63e98712c6947d163c6c873a2b419b33a3c724ecd64c9fd6ddaf487fd4f9".format(
-            url, quote_plus(cred.get("aws_session_token"))
+        "&X-Amz-Signature=e63e7c291b2c89abf7a94ca1ed7438862feaadffc47a0c925723798ffb5a9bea".format(
+            url, quote(cred.get("aws_session_token"), safe="")
         )
     )
     assert presigned_url == expected
@@ -239,7 +239,7 @@ def test_generate_presigned_url_escaped():
             "s3",
             "us-east-1",
             86400,
-            {"user-id": "value2", "username": "value1@gmail.com"},
+            {"user-id": "value2", "username": "value1 (value3)@gmail.com"},
         )
 
     expected = (
@@ -250,7 +250,7 @@ def test_generate_presigned_url_escaped():
         "&X-Amz-Expires=86400"
         "&X-Amz-SignedHeaders=host"
         "&user-id=value2"
-        "&username=value1%40gmail.com"
-        "&X-Amz-Signature=ad46ace7fb67bf21f6bda544711c04dea3942c38da3099f037e441b6bdcc12b1"
+        "&username=value1%20%28value3%29%40gmail.com"
+        "&X-Amz-Signature=b4ac7428943c9801746b6d00112d3ae76739d79ee3e8e73070110979ddab4a1d"
     )
     assert presigned_url == expected
