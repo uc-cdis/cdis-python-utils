@@ -4,6 +4,8 @@ from functools import reduce
 import os
 import pstats
 
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
