@@ -93,7 +93,7 @@ Also included here is the `cdispyutils.profiling.vis` module, which exports a
 ```python
 from cdispyutils.profiling.vis import ProfilePlotter
 
-plotter = ProfilePlotter("./profile")
+plotter = ProfilePlotter("profile")
 plotter.make_all_plots(save_file="profile_graphs.pdf")
 ```
 This creates a file `profile_graphs` which contains a series of plots
