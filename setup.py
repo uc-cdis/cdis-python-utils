@@ -24,7 +24,7 @@ setup(
     description="General utilities for Gen3 development",
     license="Apache",
     install_requires=[
-        "cryptography==2.1",
+        "cryptography==2.8",
         "PyJWT~=1.5",
         "requests~=2.5",
         "cdiserrors~=0.1",
