@@ -27,7 +27,7 @@ setup(
         "cryptography==2.8",
         "PyJWT~=1.5",
         "requests~=2.5",
-        "cdiserrors~=0.1",
+        "cdiserrors~=1.0.0",
         "Flask",
     ],
     extras_require=dict(profiling=["Werkzeug~=0.9", "matplotlib~=2.2", "numpy~=1.15"]),
