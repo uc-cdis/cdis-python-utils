@@ -2,30 +2,37 @@ language: python
 dist: xenial
 python:
 - 3.6
+before_install:
+- pip install poetry
+- which poetry
 install:
-- pip install pipenv
-- pipenv install --dev --deploy --python `which python`
-- pipenv graph
-script: pipenv run py.test -v
+- curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+- source $HOME/.poetry/env
+- poetry install -vv
+
+script:
+- poetry run pytest -vv ./test
+after_script:
+- pip install codacy-coverage
+- python-codacy-coverage -r coverage.xml
+
 before_deploy:
-- sed -i.bak "s/=get_version()/='$TRAVIS_TAG'/g" setup.py
-- cat setup.py
-- if [ $(python setup.py --version) == '0.0.0' ]; then travis_terminate 1; fi
+- poetry config http-basic.pypi $PYPI_USER $PYPI_PASSWORD
+- poetry build
 deploy:
-  provider: pypi
-  user: uc-ctds
-  password:
-    secure: SgpCLTs5m220L/vzbntmPkm9DinEHV/hFG+fdXAobxwX237PnXIqeOBnAZClEOG8+yZRMa7NWyD1jGmuWPEQV4ptCYTIu8TRySUhSLvBe1hoghmJaUFrHng/HwdTItXFV5sSVvuIaQjg3Jq0QcjNjmo+T8sI1CD5w+83KiU16GDvyue9Lg1pbBV83YwDP2QqBhMlh6iVEKeVN9HFgu78r0BXloiQYKjVu66O6/X/JPXxQqyKsSencZPl7xzNBxKZC94QEGckK1l8V3RdGyu/CPeC6ubcew07A7ZgQZQy62zybvs/RW5YnyH4S9UYlVuSSzNmQtbWy+IIRYpujtxxsQ9c99dqVfRGf5szdXs31r9K5wHDbGqto1NSXKz1yjOVPVGgVGT/ZVNAUjAonH6KlUarc8URHVpvUoEzGEaf5e3I7Kp8tQWfM2fvabfG2tSonscaDpj2oybCBiJ5ds9FMLy74DJwy8YfIGvO8i0jXoWMVVbJUPzWGwgwdXN75LMUVF2peFsQXzJYDacSLLp+zwACjA7WuUNLH75SKLmXWtu1Bnc/ULHnMH/UxwKEXgPVrDaOZVvUNqrk1j8BlxaN6f17WGMvZW5YmRM/7TLcqRCweWsekt8vL8zp2Nx+Q2Wwadyssjardap03U+o8Tew4zDtgv4+tHeMpOfhs/99fpI=
+  provider: script
+  script: "poetry publish"
   skip_existing: true
   skip_cleanup: true
   on:
     python: 3.6
     repo: uc-cdis/cdis-python-utils
     tags: true
+after_deploy:
+- pip install gen3git
+- gen3git release
+
 env:
   global:
   - PIPENV_IGNORE_VIRTUALENVS=1
   - secure: ov66mTdCG+Gl+wLAjYdqR0HrKbgpQFSxSgCi0ihTmErzQl/vudZyPXdoSEQfFsWpKGI+UmhYklsvGySnYzyhTuUTrmovQ5C9tMMASWtJrwzAgun6PIli7ETjw5j273WTwIPy/HfrysqW6ab563VYbbuxn7ZANV86wN17TKp0qyaJPD4Kc6iFp8yKei7msXPy6Pc36AYz4vVjq1AZasFLIrRy5va4VNxtNUvK4peOdKcxDTmj4GMS8eF/Y55HuOzuH/B3hw0XqCgwk+u+4DCImpvQIhsfChgI71m70/scWwhiSaVY3WEmZBbJPgFLsoBm+div2+kG8zcNvOK2OEhQgvocxzgpTik5rvZX2SRCpuBxgbZEzUEbvNPArJVLwOBlbadIpuM8+sHTj/2A/4+AboVat10jjHrevTKlCo6CXe2QPXO474eZP0f5lOsGRQ9iSW52MRRCt8yOIALWwmn5DDrwt41ezn5+JDglxPxebqFLuvutG/7XMhhCuU91MYLxI/xhliRcYL9SiZXjnEz0p91YUNQQ2seJNvw/d65ypYdJDqS8kM8II7+lL/9l41hZ2En3LDSQ5diXPzEeNVp5cz/mn2rwlehTLmGbdb0Qy3WbD9eKoY1ADR+yDTE9l3t9UtRqkJ6Jgdig1YNkmdaFmrMfMHzTntY5He78b95zyk8=
-after_deploy:
-- pipenv run pip install gen3git
-- pipenv run gen3git release
