@@ -6,9 +6,9 @@ before_install:
 - pip install poetry
 - which poetry
 install:
-- curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
 - source $HOME/.poetry/env
 - poetry install -vv
+- poetry show
 
 script:
 - poetry run pytest -vv ./test
@@ -29,8 +29,8 @@ deploy:
     repo: uc-cdis/cdis-python-utils
     tags: true
 after_deploy:
-- pip install gen3git
-- gen3git release
+- poetry run pip install gen3git
+- poetry run gen3git release
 
 env:
   global:

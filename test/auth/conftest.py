@@ -147,6 +147,8 @@ def encoded_jwt(claims, private_key):
     Return:
         str: JWT containing claims encoded with private key
     """
+    print("KDOFGJSNBSFOGMBOMO---------------------------")
+    print(type(jwt.encode(claims, key=private_key, algorithm="RS256")))
     return jwt.encode(claims, key=private_key, algorithm="RS256")
 
 
