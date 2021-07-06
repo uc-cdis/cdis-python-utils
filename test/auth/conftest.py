@@ -147,8 +147,6 @@ def encoded_jwt(claims, private_key):
     Return:
         str: JWT containing claims encoded with private key
     """
-    print("KDOFGJSNBSFOGMBOMO---------------------------")
-    print(type(jwt.encode(claims, key=private_key, algorithm="RS256")))
     return jwt.encode(claims, key=private_key, algorithm="RS256")
 
 
@@ -163,7 +161,7 @@ def auth_header(encoded_jwt):
     Return:
         List[Tuple[str, str]]: the authorization header
     """
-    return [("Authorization", "Bearer %s" % encoded_jwt.decode("utf-8"))]
+    return [("Authorization", "Bearer %s" % encoded_jwt)]
 
 
 @pytest.fixture
