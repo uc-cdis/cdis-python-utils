@@ -2,11 +2,10 @@ language: python
 dist: xenial
 python:
 - 3.6
-before_install:
-- pip install poetry
-- which poetry
 install:
+- pip install poetry
 - source $HOME/.poetry/env
+- which poetry
 - poetry install -vv
 - poetry show
 
