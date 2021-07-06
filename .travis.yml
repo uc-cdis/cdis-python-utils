@@ -11,16 +11,13 @@ install:
 
 script:
 - poetry run pytest -vv ./test
-after_script:
-- pip install codacy-coverage
-- python-codacy-coverage -r coverage.xml
 
 before_deploy:
 - poetry config http-basic.pypi $PYPI_USER $PYPI_PASSWORD
 - poetry build
 deploy:
   provider: script
-  script: "poetry publish"
+  script: poetry publish
   skip_existing: true
   skip_cleanup: true
   on:
