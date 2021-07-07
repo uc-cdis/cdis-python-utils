@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "cdispyutils"
+version = "1.1.0"
+description = "This package includes several utility Python tools for the Gen3 stack."
+authors = ["CTDS UChicago <cdis@uchicago.edu>"]
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+cryptography = "^3.4.7"
+PyJWT = "^2.1.0"
+requests = "~2.5.0"
+cdiserrors = "^1.0.0"
+Flask = "^2.0.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+pytest-flask = "^1.2.0"
+mock = "^4.0.3"
+
+[tool.poetry.extras]
+profiling = ["Werkzeug~=0.9", "matplotlib~=2.2", "numpy~=1.15"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
