@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cdispyutils"
-version = "1.1.0"
+version = "2.0.0"
 description = "This package includes several utility Python tools for the Gen3 stack."
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
