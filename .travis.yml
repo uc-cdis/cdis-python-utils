@@ -20,7 +20,7 @@ deploy:
   skip_existing: true
   skip_cleanup: true
   on:
-    python: 3.6
+    python: 3.9
     repo: uc-cdis/cdis-python-utils
     tags: true
 after_deploy:
