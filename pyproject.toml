@@ -6,12 +6,12 @@ authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-cryptography = "^3.4.7"
+python = "^3.9"
 PyJWT = "^2.1.0"
-requests = "~2.5.0"
 cdiserrors = "^1.0.0"
 Flask = "^2.0.1"
+requests = "^2.27.1"
+cryptography = "^36.0.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
