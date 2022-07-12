@@ -7,14 +7,14 @@ license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-PyJWT = "^2.1.0"
 cdiserrors = "^1.0.0"
 cryptography = ">=3.2"
-# unless this library explicitly uses features known only to a requests/Flask version
+# unless this library explicitly uses features known only to a library version
 # above a certain version, allow flexibility for consumers of this library to
 # limit the version as necessary
 requests = "*"
 Flask = "*"
+PyJWT = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"

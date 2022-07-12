@@ -397,7 +397,7 @@ profiling = []
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "b303ed1c1b71af76a1f265263ef7d0fefb0d503fddc25f5e0c9716e00fd9159f"
+content-hash = "3bf84e0a3384aa6a95b20a437c322530bd379c8d3d5b9be84e12c64fc73574ab"
 
 [metadata.files]
 atomicwrites = []
