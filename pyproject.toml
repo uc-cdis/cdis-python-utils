@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "cdispyutils"
-version = "2.0.1"
+version = "2.1.0"
 description = "This package includes several utility Python tools for the Gen3 stack."
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-cdiserrors = "^1.0.0"
-cryptography = ">=3.2"
+python = "^3.9"
+cdiserrors = "*"
+cryptography = "*"
 # unless this library explicitly uses features known only to a library version
 # above a certain version, allow flexibility for consumers of this library to
 # limit the version as necessary
@@ -17,12 +17,12 @@ Flask = "*"
 PyJWT = "*"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.4"
-pytest-flask = "^1.2.0"
-mock = "^4.0.3"
+pytest = "*"
+pytest-flask = "*"
+mock = "*"
 
 [tool.poetry.extras]
-profiling = ["Werkzeug~=0.9", "matplotlib~=2.2", "numpy~=1.15"]
+profiling = ["Werkzeug", "matplotlib", "numpy"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
