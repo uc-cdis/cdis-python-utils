@@ -1,6 +1,7 @@
 # cdispyutils
 
-This package includes several utility Python tools for the Gen3 stack.
+This package includes several utility Python tools for the Gen3 stack. It is meant to be imported as a means to access
+supplementary tools and resources that are reusable and not exclusive to any specific repo we use. 
 
 
 ## profiling
