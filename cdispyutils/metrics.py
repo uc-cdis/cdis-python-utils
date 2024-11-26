@@ -126,7 +126,7 @@ class BaseMetrics(object):
             value (int): Value to set the metric to
             description (str): describing the gauge in case it doesn't already exist
         """
-        _create_gauge_if_not_exist(name, labels, value, description)
+        self._create_gauge_if_not_exist(name, labels, value, description)
         logger.debug(f"Decrementing gauge '{name}' by '{value}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).dec(value)
 
@@ -141,7 +141,7 @@ class BaseMetrics(object):
             value (int): Value to set the metric to
             description (str): describing the gauge in case it doesn't already exist
         """
-        _create_gauge_if_not_exist(name, labels, value, description)
+        self._create_gauge_if_not_exist(name, labels, value, description)
         logger.debug(f"Incrementing gauge '{name}' by '{value}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).inc(value)
 
@@ -155,6 +155,6 @@ class BaseMetrics(object):
             labels (dict): Dictionary of labels for the metric
             value (int): Value to set the metric to
         """
-        _create_gauge_if_not_exist(name, labels, value, description)
+        self._create_gauge_if_not_exist(name, labels, value, description)
         logger.debug(f"Setting gauge '{name}' with '{value}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).set(value)
