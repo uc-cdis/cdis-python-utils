@@ -4,19 +4,19 @@ process Python environment. This is intended to be extended and instantiated by
 services, stored at some application context level, and then used to add metrics
 (which are likely later exposed at the /metrics endpoint for Prometheus to scrape).
 """
+
 import os
 import pathlib
 
 from cdislogging import get_logger
 from prometheus_client import (
+    CONTENT_TYPE_LATEST,
     CollectorRegistry,
-    multiprocess,
     Counter,
     Gauge,
     generate_latest,
-    CONTENT_TYPE_LATEST,
+    multiprocess,
 )
-
 
 logger = get_logger(__name__)
 
@@ -100,16 +100,7 @@ class BaseMetrics(object):
         logger.debug(f"Incrementing counter '{name}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).inc()
 
-    def set_gauge(self, name, labels, value, description=""):
-        """
-        Set a Prometheus gauge metric.
-        Note that this function should not be called directly - implement a function like
-        `add_signed_url_event` instead. A metric's labels should always be consistent.
-        Args:
-            name (str): Name of the metric
-            labels (dict): Dictionary of labels for the metric
-            value (int): Value to set the metric to
-        """
+    def _create_gauge_if_not_exist(self, name, labels, value, description):
         if not self.enabled:
             return
 
@@ -124,5 +115,46 @@ class BaseMetrics(object):
                 f"Trying to create gauge '{name}' but a {type(self.prometheus_metrics[name])} with this name already exists"
             )
 
-        logger.debug(f"Setting gauge '{name}' with labels: {labels}")
+    def dec_gauge(self, name, labels, value, description=""):
+        """
+        Decrement a Prometheus gauge metric.
+        Note that this function should not be called directly - implement a function like
+        `add_signed_url_event` instead. A metric's labels should always be consistent.
+        Args:
+            name (str): Name of the metric
+            labels (dict): Dictionary of labels for the metric
+            value (int): Value to set the metric to
+            description (str): describing the gauge in case it doesn't already exist
+        """
+        _create_gauge_if_not_exist(name, labels, value, description)
+        logger.debug(f"Decrementing gauge '{name}' by '{value}' with labels: {labels}")
+        self.prometheus_metrics[name].labels(*labels.values()).dec(value)
+
+    def inc_gauge(self, name, labels, value, description=""):
+        """
+        Increment a Prometheus gauge metric.
+        Note that this function should not be called directly - implement a function like
+        `add_signed_url_event` instead. A metric's labels should always be consistent.
+        Args:
+            name (str): Name of the metric
+            labels (dict): Dictionary of labels for the metric
+            value (int): Value to set the metric to
+            description (str): describing the gauge in case it doesn't already exist
+        """
+        _create_gauge_if_not_exist(name, labels, value, description)
+        logger.debug(f"Incrementing gauge '{name}' by '{value}' with labels: {labels}")
+        self.prometheus_metrics[name].labels(*labels.values()).inc(value)
+
+    def set_gauge(self, name, labels, value, description=""):
+        """
+        Set a Prometheus gauge metric.
+        Note that this function should not be called directly - implement a function like
+        `add_signed_url_event` instead. A metric's labels should always be consistent.
+        Args:
+            name (str): Name of the metric
+            labels (dict): Dictionary of labels for the metric
+            value (int): Value to set the metric to
+        """
+        _create_gauge_if_not_exist(name, labels, value, description)
+        logger.debug(f"Setting gauge '{name}' with '{value}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).set(value)

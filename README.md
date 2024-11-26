@@ -2,6 +2,10 @@
 
 This package includes several utility Python tools for the Gen3 stack.
 
+## metrics
+
+- Prometheus
+
 
 ## profiling
 
