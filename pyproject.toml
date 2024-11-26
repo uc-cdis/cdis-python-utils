@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cdispyutils"
-version = "2.1.0"
+version = "2.3.0"
 description = "This package includes several utility Python tools for the Gen3 stack."
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -15,6 +15,7 @@ cryptography = "^43.0.1"
 requests = "*"
 Flask = "*"
 PyJWT = "*"
+prometheus-client = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
