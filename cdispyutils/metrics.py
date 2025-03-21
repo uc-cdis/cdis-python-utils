@@ -16,6 +16,8 @@ from prometheus_client import (
     Gauge,
     generate_latest,
     multiprocess,
+    make_wsgi_app,
+    make_asgi_app,
 )
 
 logger = get_logger(__name__)
@@ -58,7 +60,23 @@ class BaseMetrics(object):
         )
 
         self._registry = CollectorRegistry()
-        multiprocess.MultiProcessCollector(self._registry)
+        multiprocess.MultiProcessCollector(self._registry, path=prometheus_dir)
+
+    def get_asgi_app(self):
+        """
+        Get the ASGI app for the metrics endpoint, (for asgi apps, e.g FastAPI)
+        Returns:
+            ASGI app: ASGI app for the metrics endpoint
+        """
+        return make_asgi_app(self._registry)
+
+    def get_wsgi_app(self):
+        """
+        Get the WSGI app for the metrics endpoint, (for wsgi apps, e.g Flask)
+        Returns:
+            WSGI app: WSGI app for the metrics endpoint
+        """
+        return make_wsgi_app(self._registry)
 
     def get_latest_metrics(self):
         """
