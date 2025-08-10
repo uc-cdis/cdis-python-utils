@@ -109,7 +109,7 @@ class BaseMetrics(object):
             logger.info(
                 f"Creating counter '{name}' with description '{description}' and labels: {labels}"
             )
-            self.prometheus_metrics[name] = Counter(name, description, [*labels.keys()])
+            self.prometheus_metrics[name] = Counter(name, description, [*labels.keys()], registry=self._registry)
         elif type(self.prometheus_metrics[name]) is not Counter:
             raise ValueError(
                 f"Trying to create counter '{name}' but a {type(self.prometheus_metrics[name])} with this name already exists"
@@ -177,7 +177,7 @@ class BaseMetrics(object):
             logger.info(
                 f"Creating gauge '{name}' with description '{description}' and labels: {labels}"
             )
-            self.prometheus_metrics[name] = Gauge(name, description, [*labels.keys()])
+            self.prometheus_metrics[name] = Gauge(name, description, [*labels.keys()], registry=self._registry)
         elif type(self.prometheus_metrics[name]) is not Gauge:
             raise ValueError(
                 f"Trying to create gauge '{name}' but a {type(self.prometheus_metrics[name])} with this name already exists"
