@@ -6,9 +6,9 @@ authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.13,<4"
 cdiserrors = "*"
-cryptography = "^43.0.1"
+cryptography = "*"
 # unless this library explicitly uses features known only to a library version
 # above a certain version, allow flexibility for consumers of this library to
 # limit the version as necessary
