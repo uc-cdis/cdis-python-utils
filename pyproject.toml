@@ -8,7 +8,7 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = ">=3.13,<4"
 cdiserrors = "*"
-cryptography = "*"
+cdislogging = "*"
 # unless this library explicitly uses features known only to a library version
 # above a certain version, allow flexibility for consumers of this library to
 # limit the version as necessary
@@ -16,14 +16,20 @@ requests = "*"
 Flask = "*"
 PyJWT = "*"
 prometheus-client = "*"
+matplotlib = { version = "*", optional = true }
+numpy = { version = "*", optional = true }
+uwsgi = { version = "*", optional = true }
+Werkzeug = { version = "*", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-flask = "*"
 mock = "*"
+deptry = "^0.24.0"
 
 [tool.poetry.extras]
 profiling = ["Werkzeug", "matplotlib", "numpy"]
+uwsgi = ["uwsgi"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
