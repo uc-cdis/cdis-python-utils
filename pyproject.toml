@@ -17,7 +17,7 @@ Flask = "*"
 PyJWT = "*"
 prometheus-client = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-flask = "*"
 mock = "*"
