@@ -13,7 +13,7 @@ from cdispyutils.hmac4 import generate_aws_presigned_url
 from urllib.parse import urlparse, quote_plus, quote
 
 import requests
-from test.mock_datetime import mock_datetime
+from tests.mock_datetime import mock_datetime
 
 sys.path = ["../../"] + sys.path
 
