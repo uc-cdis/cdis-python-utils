@@ -26,6 +26,7 @@ pytest = "*"
 pytest-flask = "*"
 mock = "*"
 deptry = "^0.24.0"
+cryptography = "*"
 
 [tool.poetry.extras]
 profiling = ["Werkzeug", "matplotlib", "numpy"]
