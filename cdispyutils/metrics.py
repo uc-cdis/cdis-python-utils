@@ -1,12 +1,17 @@
 """
-Small wrapper around the Prometheus client for metrics gathering in a multi-
+Some generalized metrics classes and abstraction.
+
+For now, just a small wrapper around the Prometheus client for metrics gathering in a multi-
 process Python environment. This is intended to be extended and instantiated by
 services, stored at some application context level, and then used to add metrics
 (which are likely later exposed at the /metrics endpoint for Prometheus to scrape).
 """
 
+from abc import ABC, abstractmethod
+from collections.abc import Callable
 import os
 import pathlib
+from typing import Dict, Tuple
 
 from cdislogging import get_logger
 from prometheus_client import (
@@ -20,10 +25,70 @@ from prometheus_client import (
     make_asgi_app,
 )
 
+
 logger = get_logger(__name__)
 
 
-class BaseMetrics(object):
+class AbstractBaseMetrics(ABC):
+    def __init__(self) -> None:
+        return
+
+    @abstractmethod
+    def get_metrics_app(self, **kwargs: Dict[str, str]) -> Callable:
+        """Return a WSGI/ASGI app for metrics."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_asgi_app(self) -> Callable:
+        """Return an ASGI app for the metrics endpoint."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_wsgi_app(self) -> Callable:
+        """Return a WSGI app for the metrics endpoint."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_latest_metrics(self) -> Tuple[str, str]:
+        """
+        Generate the latest metrics.
+
+        Returns:
+            str: Latest Prometheus metrics
+            str: Content type of the latest Prometheus metrics
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def increment_counter(
+        self, name: str, labels: Dict[str, str], description: str = ""
+    ) -> None:
+        """Increment a counter metric."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def dec_gauge(
+        self, name: str, labels: Dict[str, str], value: float, description: str = ""
+    ) -> None:
+        """Decrement a gauge metric."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def inc_gauge(
+        self, name: str, labels: Dict[str, str], value: float, description: str = ""
+    ) -> None:
+        """Increment a gauge metric."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def set_gauge(
+        self, name: str, labels: Dict[str, str], value: float, description: str = ""
+    ) -> None:
+        """Set a gauge metric."""
+        raise NotImplementedError()
+
+
+class BaseMetrics(AbstractBaseMetrics):
     """
     Class to handle Prometheus metrics
 
@@ -62,7 +127,16 @@ class BaseMetrics(object):
         self._registry = CollectorRegistry()
         multiprocess.MultiProcessCollector(self._registry, path=prometheus_dir)
 
-    def get_asgi_app(self):
+    def get_metrics_app(self, **kwargs) -> Callable:
+        """
+        Required for Prometheus multiprocess setup
+        See: https://prometheus.github.io/client_python/multiprocess/
+        """
+        registry = CollectorRegistry()
+        multiprocess.MultiProcessCollector(registry, **kwargs)
+        return make_asgi_app(registry=registry)
+
+    def get_asgi_app(self) -> Callable:
         """
         Get the ASGI app for the metrics endpoint, (for asgi apps, e.g FastAPI)
         Returns:
@@ -70,7 +144,7 @@ class BaseMetrics(object):
         """
         return make_asgi_app(self._registry)
 
-    def get_wsgi_app(self):
+    def get_wsgi_app(self) -> Callable:
         """
         Get the WSGI app for the metrics endpoint, (for wsgi apps, e.g Flask)
         Returns:
@@ -78,7 +152,7 @@ class BaseMetrics(object):
         """
         return make_wsgi_app(self._registry)
 
-    def get_latest_metrics(self):
+    def get_latest_metrics(self) -> Tuple[str, str]:
         """
         Generate the latest Prometheus metrics
         Returns:
@@ -92,7 +166,7 @@ class BaseMetrics(object):
 
         return generate_latest(self._registry), CONTENT_TYPE_LATEST
 
-    def increment_counter(self, name, labels, description=""):
+    def increment_counter(self, name, labels, description="") -> None:
         """
         Increment a Prometheus counter metric.
         Note that this function should not be called directly - implement a function like
@@ -109,7 +183,9 @@ class BaseMetrics(object):
             logger.info(
                 f"Creating counter '{name}' with description '{description}' and labels: {labels}"
             )
-            self.prometheus_metrics[name] = Counter(name, description, [*labels.keys()], registry=self._registry)
+            self.prometheus_metrics[name] = Counter(
+                name, description, [*labels.keys()], registry=self._registry
+            )
         elif type(self.prometheus_metrics[name]) is not Counter:
             raise ValueError(
                 f"Trying to create counter '{name}' but a {type(self.prometheus_metrics[name])} with this name already exists"
@@ -118,7 +194,7 @@ class BaseMetrics(object):
         logger.debug(f"Incrementing counter '{name}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).inc()
 
-    def dec_gauge(self, name, labels, value, description=""):
+    def dec_gauge(self, name, labels, value, description="") -> None:
         """
         Decrement a Prometheus gauge metric.
         Note that this function should not be called directly - implement a function like
@@ -136,7 +212,7 @@ class BaseMetrics(object):
         logger.debug(f"Decrementing gauge '{name}' by '{value}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).dec(value)
 
-    def inc_gauge(self, name, labels, value, description=""):
+    def inc_gauge(self, name, labels, value, description="") -> None:
         """
         Increment a Prometheus gauge metric.
         Note that this function should not be called directly - implement a function like
@@ -154,7 +230,7 @@ class BaseMetrics(object):
         logger.debug(f"Incrementing gauge '{name}' by '{value}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).inc(value)
 
-    def set_gauge(self, name, labels, value, description=""):
+    def set_gauge(self, name, labels, value, description="") -> None:
         """
         Set a Prometheus gauge metric.
         Note that this function should not be called directly - implement a function like
@@ -171,13 +247,15 @@ class BaseMetrics(object):
         logger.debug(f"Setting gauge '{name}' with '{value}' with labels: {labels}")
         self.prometheus_metrics[name].labels(*labels.values()).set(value)
 
-    def _create_gauge_if_not_exist(self, name, labels, value, description):
+    def _create_gauge_if_not_exist(self, name, labels, value, description) -> None:
         # create the gauge if it doesn't already exist
         if name not in self.prometheus_metrics:
             logger.info(
                 f"Creating gauge '{name}' with description '{description}' and labels: {labels}"
             )
-            self.prometheus_metrics[name] = Gauge(name, description, [*labels.keys()], registry=self._registry)
+            self.prometheus_metrics[name] = Gauge(
+                name, description, [*labels.keys()], registry=self._registry
+            )
         elif type(self.prometheus_metrics[name]) is not Gauge:
             raise ValueError(
                 f"Trying to create gauge '{name}' but a {type(self.prometheus_metrics[name])} with this name already exists"
