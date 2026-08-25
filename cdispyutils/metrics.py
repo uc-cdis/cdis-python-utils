@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 import os
 import pathlib
-from typing import Dict, Tuple
+from typing import Dict
 
 from cdislogging import get_logger
 from prometheus_client import (
@@ -19,10 +19,12 @@ from prometheus_client import (
     CollectorRegistry,
     Counter,
     Gauge,
+    Histogram,
     generate_latest,
     multiprocess,
     make_wsgi_app,
     make_asgi_app,
+    values,
 )
 
 
@@ -49,7 +51,7 @@ class AbstractBaseMetrics(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_latest_metrics(self) -> Tuple[str, str]:
+    def get_latest_metrics(self) -> tuple[bytes, str]:
         """
         Generate the latest metrics.
 
@@ -110,22 +112,34 @@ class BaseMetrics(AbstractBaseMetrics):
                             doesn't have to check, it always tries to log a metric.
             prometheus_dir (str): Directory to use when setting PROMETHEUS_MULTIPROC_DIR env var (which prometheus requires
                                   for multiprocess metrics collection). Note that this the prometheus client is very
-                                  finicky about when the ENV var is set.
+                                  finicky about when the ENV var is set: any metric created before this constructor
+                                  runs keeps storing its value in process memory and will not appear in a
+                                  multiprocess registry.
         """
         self.enabled = enabled
         self.prometheus_metrics = {}
+
+        # Created even when disabled, so `get_asgi_app`, `get_wsgi_app` and `get_latest_metrics`
+        # serve an empty 200 rather than raising AttributeError. A caller mounting the endpoint
+        # should not have to know whether metrics are on.
+        self._registry = CollectorRegistry()
         if not enabled:
             return
 
         pathlib.Path(prometheus_dir).mkdir(parents=True, exist_ok=True)
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_dir
 
+        # prometheus_client chooses between its in-memory and its multiprocess value class once,
+        # when prometheus_client.values is first imported, from PROMETHEUS_MULTIPROC_DIR - and
+        # this module's own import wins that race against a caller setting the variable here.
+        # Re-running the choice is what keeps counters out of process memory; without it they
+        # stay in memory while /metrics serves a multiprocess registry over an empty directory,
+        # returning 200 with no data. Metrics built before this runs keep the class they got.
+        values.ValueClass = values.get_value_class()
+
         logger.info(
             f"PROMETHEUS_MULTIPROC_DIR is {os.environ['PROMETHEUS_MULTIPROC_DIR']}"
         )
-
-        self._registry = CollectorRegistry()
-        multiprocess.MultiProcessCollector(self._registry, path=prometheus_dir)
 
     def get_metrics_app(self, **kwargs) -> Callable:
         """
@@ -152,17 +166,19 @@ class BaseMetrics(AbstractBaseMetrics):
         """
         return make_wsgi_app(self._registry)
 
-    def get_latest_metrics(self) -> Tuple[str, str]:
+    def get_latest_metrics(self) -> tuple[bytes, str]:
         """
         Generate the latest Prometheus metrics
         Returns:
-            str: Latest Prometheus metrics
+            bytes: Latest Prometheus metrics, in the exposition format `generate_latest` emits.
+                   Bytes in both branches, so a caller handing this to a response does not have
+                   to know whether metrics were enabled.
             str: Content type of the latest Prometheus metrics
         """
         # When metrics gathering is not enabled, the metrics endpoint should not error, but it should
         # not return any data.
         if not self.enabled:
-            return "", CONTENT_TYPE_LATEST
+            return b"", CONTENT_TYPE_LATEST
 
         return generate_latest(self._registry), CONTENT_TYPE_LATEST
 
@@ -260,3 +276,52 @@ class BaseMetrics(AbstractBaseMetrics):
             raise ValueError(
                 f"Trying to create gauge '{name}' but a {type(self.prometheus_metrics[name])} with this name already exists"
             )
+
+    def observe_histogram(
+        self, name, labels, value, description="", buckets=None
+    ) -> None:
+        """
+        Record one observation in a Prometheus histogram metric.
+
+        Not part of AbstractBaseMetrics: adding an abstract method to that contract would stop
+        any existing implementation of it from instantiating. Check with `hasattr` before
+        calling this on something typed as the abstract base.
+
+        Args:
+            name (str): Name of the metric.
+            labels (dict): Dictionary of labels for the metric. A histogram stores one bucket
+                series per label combination, so it multiplies the cost of every label far
+                faster than a counter does.
+            value (float): The observation, for example a duration in seconds.
+            description (str): Help text, used only when the histogram is first created.
+            buckets (Sequence[float] | None): Upper bounds of the buckets. None takes
+                prometheus_client's defaults, which span 5ms to 10s and suit request latency.
+
+        Raises:
+            ValueError: If a metric of a different type already exists under this name.
+        """
+        if not self.enabled:
+            return
+
+        # create the histogram if it doesn't already exist
+        if name not in self.prometheus_metrics:
+            logger.info(
+                f"Creating histogram '{name}' with description '{description}' and labels: {labels}"
+            )
+            extra_kwargs = {} if buckets is None else {"buckets": buckets}
+            self.prometheus_metrics[name] = Histogram(
+                name,
+                description,
+                [*labels.keys()],
+                registry=self._registry,
+                **extra_kwargs,
+            )
+        elif type(self.prometheus_metrics[name]) is not Histogram:
+            raise ValueError(
+                f"Trying to create histogram '{name}' but a {type(self.prometheus_metrics[name])} with this name already exists"
+            )
+
+        logger.debug(
+            f"Observing '{value}' for histogram '{name}' with labels: {labels}"
+        )
+        self.prometheus_metrics[name].labels(*labels.values()).observe(value)

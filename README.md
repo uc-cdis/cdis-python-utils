@@ -8,6 +8,14 @@ supplementary tools and resources that are reusable and not exclusive to any spe
 - Prometheus
 
 
+## observability
+
+OpenTelemetry tracing, Pyroscope continuous profiling, and cardinality-safe request metrics for
+FastAPI services. Requires the `observability` extra.
+
+See https://github.com/uc-cdis/cdis-python-utils/tree/master/cdispyutils/observability
+
+
 ## profiling
 
 See https://github.com/uc-cdis/cdis-python-utils/tree/master/cdispyutils/profiling

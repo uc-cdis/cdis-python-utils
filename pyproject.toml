@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cdispyutils"
-version = "2.5.1"
+version = "2.6.0"
 description = "This package includes several utility Python tools for the Gen3 stack."
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -20,6 +20,19 @@ matplotlib = { version = "*", optional = true }
 numpy = { version = "*", optional = true }
 uwsgi = { version = "*", optional = true }
 Werkzeug = { version = "*", optional = true }
+opentelemetry-api = { version = "*", optional = true }
+opentelemetry-sdk = { version = "*", optional = true }
+opentelemetry-exporter-otlp = { version = "*", optional = true }
+opentelemetry-instrumentation-fastapi = { version = "*", optional = true }
+opentelemetry-instrumentation-httpx = { version = "*", optional = true }
+opentelemetry-instrumentation-requests = { version = "*", optional = true }
+opentelemetry-instrumentation-logging = { version = "*", optional = true }
+opentelemetry-instrumentation-asyncpg = { version = "*", optional = true }
+pyroscope-io = { version = "*", optional = true }
+pyroscope-otel = { version = "*", optional = true }
+fastapi = { version = "*", optional = true }
+# Imported directly for the ASGI types and Request, rather than relied on through FastAPI.
+starlette = { version = "*", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
@@ -27,10 +40,26 @@ pytest-flask = "*"
 mock = "*"
 deptry = "^0.24.0"
 cryptography = "*"
+# fastapi.testclient needs it; the fastapi core distribution does not pull it in.
+httpx = "*"
 
 [tool.poetry.extras]
 profiling = ["Werkzeug", "matplotlib", "numpy"]
 uwsgi = ["uwsgi"]
+observability = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp",
+    "opentelemetry-instrumentation-fastapi",
+    "opentelemetry-instrumentation-httpx",
+    "opentelemetry-instrumentation-requests",
+    "opentelemetry-instrumentation-logging",
+    "opentelemetry-instrumentation-asyncpg",
+    "pyroscope-io",
+    "pyroscope-otel",
+    "fastapi",
+    "starlette",
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

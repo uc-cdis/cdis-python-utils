@@ -49,6 +49,12 @@ coverage.xml
 *.mo
 *.pot
 
+# AI
+.claude/
+.serena/
+AGENTS.md
+CLAUDE.md
+
 # Django stuff:
 *.log
 local_settings.py
@@ -93,3 +99,4 @@ ENV/
 
 # Other
 .DS_Store
+.vscode/
