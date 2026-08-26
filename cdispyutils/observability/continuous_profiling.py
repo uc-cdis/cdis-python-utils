@@ -8,7 +8,7 @@ import os
 from collections.abc import Mapping
 
 import pyroscope
-from cdislogging import get_logger
+from gen3logging import get_logger
 
 from cdispyutils.observability._config import env_bool, env_int, env_str, resolve
 

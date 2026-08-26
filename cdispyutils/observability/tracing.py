@@ -11,7 +11,7 @@ from collections.abc import Collection, Iterable
 from types import FunctionType, ModuleType
 from typing import Any, Protocol, cast
 
-from cdislogging import get_logger
+from gen3logging import get_logger
 from fastapi import FastAPI
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (

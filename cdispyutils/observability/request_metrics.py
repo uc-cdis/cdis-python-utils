@@ -8,7 +8,7 @@ import time
 from collections.abc import Awaitable, Callable, Collection, Mapping
 from typing import Protocol, cast
 
-from cdislogging import get_logger
+from gen3logging import get_logger
 from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send

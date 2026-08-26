@@ -13,7 +13,7 @@ Four signals and how they leave the process:
 | Traces   | OTLP to a collector, or the console         | `tracing.configure_tracing`                              |
 | Profiles | Pyroscope ingest API                        | `continuous_profiling.configure_profiling`               |
 | Metrics  | Scraped from an endpoint the service mounts | `request_metrics.add_request_metrics_middleware`         |
-| Logs     | JSON on stdout, carrying the trace id       | `cdislogging`, correlated by the logging instrumentation |
+| Logs     | JSON on stdout, carrying the trace id       | `gen3logging`, correlated by the logging instrumentation |
 
 Import the submodules directly. Importing them through the package would drag OpenTelemetry,
 Pyroscope, and FastAPI in together even when only one is wanted.

@@ -13,7 +13,7 @@ import os
 import pathlib
 from typing import Dict
 
-from cdislogging import get_logger
+from gen3logging import get_logger
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     CollectorRegistry,

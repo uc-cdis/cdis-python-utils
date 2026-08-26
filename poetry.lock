@@ -709,6 +709,22 @@ unicode = ["unicodedata2 (>=17.0.0) ; python_version <= \"3.14\""]
 woff = ["brotli (>=1.0.1) ; platform_python_implementation == \"CPython\"", "brotlicffi (>=0.8.0) ; platform_python_implementation != \"CPython\"", "zopfli (>=0.1.4)"]
 
 [[package]]
+name = "gen3logging"
+version = "2.0.0"
+description = "Standardized logging tool and format for Gen3"
+optional = false
+python-versions = ">=3.13,<4"
+groups = ["main"]
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/uc-cdis/cdislogging.git"
+reference = "feat/json"
+resolved_reference = "66e6d96eff1b8d73279ab1256fb4c811c9043722"
+
+[[package]]
 name = "googleapis-common-protos"
 version = "1.75.1"
 description = "Common protobufs used in Google APIs"
@@ -2388,4 +2404,4 @@ uwsgi = ["uwsgi"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4"
-content-hash = "c7ea0ebcb2b7ec0a98b55ffe1435379486b19787f8ddad2ab85b81027d1f4f6b"
+content-hash = "0d6cee36e0ca1bf7787a52e072e1decd6fbed5ec7d005efaaf279bc1b8a79cec"

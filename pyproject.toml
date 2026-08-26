@@ -8,7 +8,8 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = ">=3.13,<4"
 cdiserrors = "*"
-cdislogging = "*"
+# `gen3logging` is the renamed `cdislogging`; the repository still has the old name.
+gen3logging = { git = "https://github.com/uc-cdis/cdislogging.git", rev = "feat/json" }
 # unless this library explicitly uses features known only to a library version
 # above a certain version, allow flexibility for consumers of this library to
 # limit the version as necessary
