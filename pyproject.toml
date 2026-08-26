@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cdispyutils"
-version = "2.5.1"
+version = "2.6.0"
 description = "This package includes several utility Python tools for the Gen3 stack."
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -8,7 +8,8 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = ">=3.13,<4"
 cdiserrors = "*"
-cdislogging = "*"
+# `gen3logging` is the renamed `cdislogging`; the repository still has the old name.
+gen3logging = { git = "https://github.com/uc-cdis/cdislogging.git", rev = "feat/json" }
 # unless this library explicitly uses features known only to a library version
 # above a certain version, allow flexibility for consumers of this library to
 # limit the version as necessary
@@ -20,6 +21,19 @@ matplotlib = { version = "*", optional = true }
 numpy = { version = "*", optional = true }
 uwsgi = { version = "*", optional = true }
 Werkzeug = { version = "*", optional = true }
+opentelemetry-api = { version = "*", optional = true }
+opentelemetry-sdk = { version = "*", optional = true }
+opentelemetry-exporter-otlp = { version = "*", optional = true }
+opentelemetry-instrumentation-fastapi = { version = "*", optional = true }
+opentelemetry-instrumentation-httpx = { version = "*", optional = true }
+opentelemetry-instrumentation-requests = { version = "*", optional = true }
+opentelemetry-instrumentation-logging = { version = "*", optional = true }
+opentelemetry-instrumentation-asyncpg = { version = "*", optional = true }
+pyroscope-io = { version = "*", optional = true }
+pyroscope-otel = { version = "*", optional = true }
+fastapi = { version = "*", optional = true }
+# Imported directly for the ASGI types and Request, rather than relied on through FastAPI.
+starlette = { version = "*", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
@@ -27,10 +41,26 @@ pytest-flask = "*"
 mock = "*"
 deptry = "^0.24.0"
 cryptography = "*"
+# fastapi.testclient needs it; the fastapi core distribution does not pull it in.
+httpx = "*"
 
 [tool.poetry.extras]
 profiling = ["Werkzeug", "matplotlib", "numpy"]
 uwsgi = ["uwsgi"]
+observability = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp",
+    "opentelemetry-instrumentation-fastapi",
+    "opentelemetry-instrumentation-httpx",
+    "opentelemetry-instrumentation-requests",
+    "opentelemetry-instrumentation-logging",
+    "opentelemetry-instrumentation-asyncpg",
+    "pyroscope-io",
+    "pyroscope-otel",
+    "fastapi",
+    "starlette",
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
